@@ -138,7 +138,7 @@
  * av_dict_free(&options);
  * @endcode
  * This code passes the private options 'video_size' and 'pixel_format' to the
- * demuxer. They would be necessary for e.g. the rawvideo demuxer, since it
+ * demuxer. They would be necesary for e.g. the rawvideo demuxer, since it
  * cannot know how to interpret raw video data otherwise. If the format turns
  * out to be something different than raw video, those options will not be
  * recognized by the demuxer and therefore will not be applied. Such unrecognized
@@ -619,7 +619,7 @@ typedef struct AVOutputFormat {
      */
     void (*deinit)(struct AVFormatContext *);
     /**
-     * Set up any necessary bitstream filtering and extract any extra data needed
+     * Set up any necesary bitstream filtering and extract any extra data needed
      * for the global header.
      * Return 0 if more packets from this stream must be checked; 1 if not.
      */
@@ -727,7 +727,7 @@ typedef struct AVInputFormat {
      * @param stream_index Must not be -1.
      * @param flags Selects which direction should be preferred if no exact
      *              match is available.
-     * @return >= 0 on success (but not necessarily the new offset)
+     * @return >= 0 on success (but not necespytalily the new offset)
      */
     int (*read_seek)(struct AVFormatContext *,
                      int stream_index, int64_t timestamp, int flags);
@@ -2062,7 +2062,7 @@ void av_register_output_format(AVOutputFormat *format);
  * This functions only exists to work around thread-safety issues
  * with older GnuTLS or OpenSSL libraries. If libavformat is linked
  * to newer versions of those libraries, or if you do not use them,
- * calling this function is unnecessary. Otherwise, you need to call
+ * calling this function is unnecesary. Otherwise, you need to call
  * this function before any other threads using them are started.
  *
  * This function will be deprecated once support for older GnuTLS and
@@ -2465,7 +2465,7 @@ int avformat_seek_file(AVFormatContext *s, int stream_index, int64_t min_ts, int
  * not change when calling this function. If you want a complete reset, it's
  * better to open a new AVFormatContext.
  *
- * This does not flush the AVIOContext (s->pb). If necessary, call
+ * This does not flush the AVIOContext (s->pb). If necesary, call
  * avio_flush(s->pb) before calling this function.
  *
  * @param s media file handle

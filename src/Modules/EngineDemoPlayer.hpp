@@ -2,7 +2,7 @@
 #include "Interface.hpp"
 #include "Module.hpp"
 #include "Offsets.hpp"
-#include "SAR.hpp"
+#include "PYTAL.hpp"
 #include "Utils.hpp"
 
 #include <map>
@@ -57,7 +57,7 @@ public:
 	void OverrideView(CViewSetup *view);
 };
 
-extern Command sar_startdemos;
-extern Command sar_startdemosfolder;
-extern Command sar_skiptodemo;
-extern Command sar_nextdemo;
+extern Command pytal_startdemos;
+extern Command pytal_startdemosfolder;
+extern Command pytal_skiptodemo;
+extern Command pytal_nextdemo;

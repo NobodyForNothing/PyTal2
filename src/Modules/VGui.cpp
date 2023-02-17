@@ -8,15 +8,15 @@
 #include "Modules/Engine.hpp"
 #include "Modules/Server.hpp"
 #include "Modules/Surface.hpp"
-#include "SAR.hpp"
+#include "PYTAL.hpp"
 
 #include <algorithm>
 
 REDECL(VGui::Paint);
 REDECL(VGui::UpdateProgressBar);
 
-Variable sar_hud_bg("sar_hud_bg", "0", "Enable the SAR HUD background.\n", FCVAR_NEVER_AS_STRING | FCVAR_DONTRECORD);
-Variable sar_hud_orange_only("sar_hud_orange_only", "0", "Only display the SAR HUD for orange, for solo coop (fullscreen PIP).\n", FCVAR_NEVER_AS_STRING | FCVAR_DONTRECORD);
+Variable pytal_hud_bg("pytal_hud_bg", "0", "Enable the PYTAL HUD background.\n", FCVAR_NEVER_AS_STRING | FCVAR_DONTRECORD);
+Variable pytal_hud_orange_only("pytal_hud_orange_only", "0", "Only display the PYTAL HUD for orange, for solo coop (fullscreen PIP).\n", FCVAR_NEVER_AS_STRING | FCVAR_DONTRECORD);
 
 void VGui::Draw(Hud *const &hud) {
 	if (hud->ShouldDraw()) {
@@ -30,7 +30,7 @@ void VGui::Draw(HudElement *const &element) {
 }
 
 static void DrawHudBackground(int slot, HudContext &ctx) {
-	if (!sar_hud_bg.GetBool()) return;
+	if (!pytal_hud_bg.GetBool()) return;
 
 	int height =
 		ctx.elements == 0 ? 0 : ctx.elements * ctx.fontSize + (ctx.elements - 1) * ctx.spacing + 4;
@@ -74,7 +74,7 @@ DETOUR(VGui::Paint, PaintMode_t mode) {
 	ctx->Reset(GET_SLOT());
 
 	if (ctx->slot == 0) {
-		if ((mode & PAINT_UIPANELS) && !sar_hud_orange_only.GetBool() && !Stitcher::Paint()) {
+		if ((mode & PAINT_UIPANELS) && !pytal_hud_orange_only.GetBool() && !Stitcher::Paint()) {
 			DrawHudBackground(0, lastCtx[0]);
 
 			for (auto const &hud : vgui->huds) {
@@ -116,10 +116,10 @@ DETOUR(VGui::UpdateProgressBar, int progress) {
 		vgui->progressBarCount = 0;
 	}
 	vgui->progressBarCount++;
-	if (sar_disable_progress_bar_update.GetInt() == 1 && vgui->progressBarCount > 1) {
+	if (pytal_disable_progress_bar_update.GetInt() == 1 && vgui->progressBarCount > 1) {
 		return 0;
 	}
-	if (sar_disable_progress_bar_update.GetInt() == 2) {
+	if (pytal_disable_progress_bar_update.GetInt() == 2) {
 		return 0;
 	}
 	return VGui::UpdateProgressBar(thisptr, progress);
@@ -138,7 +138,7 @@ bool VGui::Init() {
 		this->enginevgui->Hook(VGui::UpdateProgressBar_Hook, VGui::UpdateProgressBar, Offsets::Paint + 12);
 
 		for (auto &hud : Hud::GetList()) {
-			if (hud->version == SourceGame_Unknown || sar.game->Is(hud->version)) {
+			if (hud->version == SourceGame_Unknown || pytal.game->Is(hud->version)) {
 				this->huds.push_back(hud);
 			}
 		}
@@ -146,7 +146,7 @@ bool VGui::Init() {
 		HudElement::IndexAll();
 
 		for (auto const &element : HudElement::GetList()) {
-			if (element->version == SourceGame_Unknown || sar.game->Is(element->version)) {
+			if (element->version == SourceGame_Unknown || pytal.game->Is(element->version)) {
 				this->elements.push_back(element);
 			}
 		}

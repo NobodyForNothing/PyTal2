@@ -193,7 +193,7 @@ char *av_get_token(const char **buf, const char *term);
  * @param s the string to parse, may be NULL
  * @param delim 0-terminated list of token delimiters, must be non-NULL
  * @param saveptr user-provided pointer which points to stored
- * information necessary for av_strtok() to continue scanning the same
+ * information necesary for av_strtok() to continue scanning the same
  * string. saveptr is updated to point to the next character after the
  * first delimiter found, or to NULL if the string was terminated
  * @return the found token, or NULL when no token is found

@@ -132,7 +132,7 @@ AVBufferSrcParameters *av_buffersrc_parameters_alloc(void);
  * @param param the stream parameters. The frames later passed to this filter
  *              must conform to those parameters. All the allocated fields in
  *              param remain owned by the caller, libavfilter will make internal
- *              copies or references when necessary.
+ *              copies or references when necesary.
  * @return 0 on success, a negative AVERROR code on failure.
  */
 int av_buffersrc_parameters_set(AVFilterContext *ctx, AVBufferSrcParameters *param);

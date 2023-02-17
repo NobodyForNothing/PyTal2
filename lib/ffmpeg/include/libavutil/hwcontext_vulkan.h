@@ -127,7 +127,7 @@ typedef struct AVVulkanFramesContext {
      * Extension data for memory allocation. Must have as many entries as
      * the number of planes of the sw_format.
      * This will be chained to VkExportMemoryAllocateInfo, which is used
-     * to make all pool images exportable to other APIs if the necessary
+     * to make all pool images exportable to other APIs if the necesary
      * extensions are present in enabled_dev_extensions.
      */
     void *alloc_pnext[AV_NUM_DATA_POINTERS];

@@ -151,7 +151,7 @@
 
 /**
  * Codec is potentially backed by a hardware implementation, but not
- * necessarily. This is used instead of AV_CODEC_CAP_HARDWARE, if the
+ * necespytalily. This is used instead of AV_CODEC_CAP_HARDWARE, if the
  * implementation provides some sort of internal fallback.
  */
 #define AV_CODEC_CAP_HYBRID              (1 << 19)
@@ -242,7 +242,7 @@ typedef struct AVCodec {
      * @{
      */
     /**
-     * Copy necessary context variables from a previous thread context to the current one.
+     * Copy necesary context variables from a previous thread context to the current one.
      * If not defined, the next thread will start automatically; otherwise, the codec
      * must call ff_thread_finish_setup().
      *

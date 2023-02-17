@@ -122,7 +122,7 @@ private:
 /// Deciding whether the instances of a class can be copied
 /// or not is a very important design choice. You are strongly
 /// encouraged to think about it before writing a class,
-/// and to use sf::NonCopyable when necessary to prevent
+/// and to use sf::NonCopyable when necesary to prevent
 /// many potential future errors when using it. This is also
 /// a very important indication to users of your class.
 ///

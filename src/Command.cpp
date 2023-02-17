@@ -2,7 +2,7 @@
 
 #include "Game.hpp"
 #include "Modules/Tier1.hpp"
-#include "SAR.hpp"
+#include "PYTAL.hpp"
 
 #include <cstring>
 #include <set>
@@ -62,7 +62,7 @@ bool Command::operator!() {
 int Command::RegisterAll() {
 	auto result = 0;
 	for (const auto &command : Command::GetList()) {
-		if (command->version != SourceGame_Unknown && !sar.game->Is(command->version)) {
+		if (command->version != SourceGame_Unknown && !pytal.game->Is(command->version)) {
 			continue;
 		}
 		command->Register();

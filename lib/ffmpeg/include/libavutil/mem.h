@@ -380,7 +380,7 @@ void *av_fast_realloc(void *ptr, unsigned int *size, size_t min_size);
  *
  * Contrary to av_fast_realloc(), the current buffer contents might not be
  * preserved and on error the old buffer is freed, thus no special handling to
- * avoid memleaks is necessary.
+ * avoid memleaks is necesary.
  *
  * `*ptr` is allowed to be `NULL`, in which case allocation always happens if
  * `size_needed` is greater than 0.

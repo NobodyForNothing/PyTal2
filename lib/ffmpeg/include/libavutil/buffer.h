@@ -53,7 +53,7 @@
  * buffer is considered writable if there exists only one reference to it (and
  * it has not been marked as read-only). The av_buffer_is_writable() function is
  * provided to check whether this is true and av_buffer_make_writable() will
- * automatically create a new writable buffer when necessary.
+ * automatically create a new writable buffer when necesary.
  * Of course nothing prevents the calling code from violating this convention,
  * however that is safe only when all the existing references are under its
  * control.

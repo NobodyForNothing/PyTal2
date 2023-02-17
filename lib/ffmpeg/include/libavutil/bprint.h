@@ -41,7 +41,7 @@ typedef struct name { \
 /**
  * Buffer to print data progressively
  *
- * The string buffer grows as necessary and is always 0-terminated.
+ * The string buffer grows as necesary and is always 0-terminated.
  * The content of the string is never accessed, and thus is
  * encoding-agnostic and can even hold binary data.
  *
@@ -66,11 +66,11 @@ typedef struct name { \
  * The size_max field determines several possible behaviours:
  *
  * size_max = -1 (= UINT_MAX) or any large value will let the buffer be
- * reallocated as necessary, with an amortized linear cost.
+ * reallocated as necesary, with an amortized linear cost.
  *
  * size_max = 0 prevents writing anything to the buffer: only the total
  * length is computed. The write operations can then possibly be repeated in
- * a buffer with exactly the necessary size
+ * a buffer with exactly the necesary size
  * (using size_init = size_max = len + 1).
  *
  * size_max = 1 is automatically replaced by the exact size available in the
@@ -180,7 +180,7 @@ void av_bprint_clear(AVBPrint *buf);
  * Test if the print buffer is complete (not truncated).
  *
  * It may have been truncated due to a memory allocation failure
- * or the size_max limit (compare size and size_max if necessary).
+ * or the size_max limit (compare size and size_max if necesary).
  */
 static inline int av_bprint_is_complete(const AVBPrint *buf)
 {

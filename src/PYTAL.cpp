@@ -1,4 +1,4 @@
-#include "SAR.hpp"
+#include "PYTAL.hpp"
 
 #include "Version.hpp"
 
@@ -11,12 +11,9 @@
 #endif
 
 #include "Cheats.hpp"
-#include "Checksum.hpp"
 #include "Command.hpp"
 #include "CrashHandler.hpp"
 #include "Event.hpp"
-#include "Features.hpp"
-#include "Features/Stats/StatsCounter.hpp"
 #include "Features/SeasonalASCII.hpp"
 #include "Game.hpp"
 #include "Hook.hpp"
@@ -24,11 +21,11 @@
 #include "Modules.hpp"
 #include "Variable.hpp"
 
-SAR sar;
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR(SAR, IServerPluginCallbacks, INTERFACEVERSION_ISERVERPLUGINCALLBACKS, sar);
+PYTAL pytal;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR(PYTAL, IServerPluginCallbacks, INTERFACEVERSION_ISERVERPLUGINCALLBACKS, pytal);
 
 
-SAR::SAR()
+PYTAL::PYTAL()
 	: modules(new Modules())
 	, features(new Features())
 	, cheats(new Cheats())
@@ -36,7 +33,7 @@ SAR::SAR()
 	, game(Game::CreateNew()) {
 }
 
-bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory) {
+bool PYTAL::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory) {
 	console = new Console();
 	if (!console->Init())
 		return false;
@@ -45,11 +42,11 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
 	// The auto-updater can create this file on Windows; we should try
 	// to delete it.
 	try {
-		if (std::filesystem::exists("sar.dll.old-auto")) {
-			std::filesystem::remove("sar.dll.old-auto");
+		if (std::filesystem::exists("pytal.dll.old-auto")) {
+			std::filesystem::remove("pytal.dll.old-auto");
 		}
-		if (std::filesystem::exists("sar.pdb.old-auto")) {
-			std::filesystem::remove("sar.pdb.old-auto");
+		if (std::filesystem::exists("pytal.pdb.old-auto")) {
+			std::filesystem::remove("pytal.pdb.old-auto");
 		}
 	} catch (...) {
 	}
@@ -60,7 +57,7 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
 
 		CrashHandler::Init();
 
-		SarInitHandler::RunAll();
+		PytalInitHandler::RunAll();
 
 		curl_global_init(CURL_GLOBAL_ALL);
 
@@ -104,7 +101,7 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
 			this->modules->AddModule<FileSystem>(&fileSystem);
 			this->modules->InitAll();
 
-			InitSARChecksum();
+			InitPYTALChecksum();
 
 			if (engine && engine->hasLoaded) {
 				engine->demoplayer->Init();
@@ -124,61 +121,61 @@ bool SAR::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerF
 
 				this->SearchPlugin();
 
-				console->PrintActive("Loaded SourceAutoRecord, Version %s\n", SAR_VERSION);
+				console->PrintActive("Loaded SourceAutoRecord, Version %s\n", PYTAL_VERSION);
 				
 				SeasonalASCII::Init();
 
 				return true;
 			} else {
-				console->Warning("SAR: Failed to load engine module!\n");
+				console->Warning("PYTAL: Failed to load engine module!\n");
 			}
 		} else {
-			console->Warning("SAR: Failed to load tier1 module!\n");
+			console->Warning("PYTAL: Failed to load tier1 module!\n");
 		}
 	} else {
-		console->Warning("SAR: Game not supported!\n");
+		console->Warning("PYTAL: Game not supported!\n");
 	}
 
-	console->Warning("SAR: Failed to load SourceAutoRecord!\n");
+	console->Warning("PYTAL: Failed to load SourceAutoRecord!\n");
 
-	if (sar.cheats) {
-		sar.cheats->Shutdown();
+	if (pytal.cheats) {
+		pytal.cheats->Shutdown();
 	}
-	if (sar.features) {
-		sar.features->DeleteAll();
-	}
-
-	if (sar.modules) {
-		sar.modules->ShutdownAll();
+	if (pytal.features) {
+		pytal.features->DeleteAll();
 	}
 
-	// This isn't in sar.modules
+	if (pytal.modules) {
+		pytal.modules->ShutdownAll();
+	}
+
+	// This isn't in pytal.modules
 	if (tier1) {
 		tier1->Shutdown();
 	}
 
 	Variable::ClearAllCallbacks();
-	SAFE_DELETE(sar.features)
-	SAFE_DELETE(sar.cheats)
-	SAFE_DELETE(sar.modules)
-	SAFE_DELETE(sar.plugin)
-	SAFE_DELETE(sar.game)
+	SAFE_DELETE(pytal.features)
+	SAFE_DELETE(pytal.cheats)
+	SAFE_DELETE(pytal.modules)
+	SAFE_DELETE(pytal.plugin)
+	SAFE_DELETE(pytal.game)
 	SAFE_DELETE(tier1)
 	SAFE_DELETE(console)
 	CrashHandler::Cleanup();
 	return false;
 }
 
-// SAR has to disable itself in the plugin list or the game might crash because of missing callbacks
+// PYTAL has to disable itself in the plugin list or the game might crash because of missing callbacks
 // This is a race condition though
-bool SAR::GetPlugin() {
+bool PYTAL::GetPlugin() {
 	auto s_ServerPlugin = reinterpret_cast<uintptr_t>(engine->s_ServerPlugin->ThisPtr());
 	auto m_Size = *reinterpret_cast<int *>(s_ServerPlugin + CServerPlugin_m_Size);
 	if (m_Size > 0) {
 		auto m_Plugins = *reinterpret_cast<uintptr_t *>(s_ServerPlugin + CServerPlugin_m_Plugins);
 		for (auto i = 0; i < m_Size; ++i) {
 			auto ptr = *reinterpret_cast<CPlugin **>(m_Plugins + sizeof(uintptr_t) * i);
-			if (!std::strcmp(ptr->m_szName, SAR_PLUGIN_SIGNATURE)) {
+			if (!std::strcmp(ptr->m_szName, PYTAL_PLUGIN_SIGNATURE)) {
 				this->plugin->ptr = ptr;
 				this->plugin->index = i;
 				return true;
@@ -187,25 +184,25 @@ bool SAR::GetPlugin() {
 	}
 	return false;
 }
-void SAR::SearchPlugin() {
+void PYTAL::SearchPlugin() {
 	this->findPluginThread = std::thread([this]() {
 		GO_THE_FUCK_TO_SLEEP(1000);
 		if (this->GetPlugin()) {
 			this->plugin->ptr->m_bDisable = true;
 		} else {
-			console->DevWarning("SAR: Failed to find SAR in the plugin list!\nTry again with \"plugin_load\".\n");
+			console->DevWarning("PYTAL: Failed to find PYTAL in the plugin list!\nTry again with \"plugin_load\".\n");
 		}
 	});
 	this->findPluginThread.detach();
 }
 
-void SAR::Unload() {
+void PYTAL::Unload() {
 	if (unloading) return;
 	unloading = true;
 
 	curl_global_cleanup();
 	statsCounter->RecordDatas(session->GetTick());
-	statsCounter->ExportToFile(sar_statcounter_filePath.GetString());
+	statsCounter->ExportToFile(pytal_statcounter_filePath.GetString());
 
 	networkManager.Disconnect();
 
@@ -213,33 +210,33 @@ void SAR::Unload() {
 
 	Hook::DisableAll();
 
-	if (sar.cheats) {
-		sar.cheats->Shutdown();
+	if (pytal.cheats) {
+		pytal.cheats->Shutdown();
 	}
-	if (sar.features) {
-		sar.features->DeleteAll();
+	if (pytal.features) {
+		pytal.features->DeleteAll();
 	}
 
-	if (sar.GetPlugin()) {
-		// SAR has to unhook CEngine some ticks before unloading the module
-		auto unload = std::string("plugin_unload ") + std::to_string(sar.plugin->index);
+	if (pytal.GetPlugin()) {
+		// PYTAL has to unhook CEngine some ticks before unloading the module
+		auto unload = std::string("plugin_unload ") + std::to_string(pytal.plugin->index);
 		engine->SendToCommandBuffer(unload.c_str(), SAFE_UNLOAD_TICK_DELAY);
 	}
 
-	if (sar.modules) {
-		sar.modules->ShutdownAll();
+	if (pytal.modules) {
+		pytal.modules->ShutdownAll();
 	}
 
-	// This isn't in sar.modules
+	// This isn't in pytal.modules
 	if (tier1) {
 		tier1->Shutdown();
 	}
 
-	SAFE_DELETE(sar.features)
-	SAFE_DELETE(sar.cheats)
-	SAFE_DELETE(sar.modules)
-	SAFE_DELETE(sar.plugin)
-	SAFE_DELETE(sar.game)
+	SAFE_DELETE(pytal.features)
+	SAFE_DELETE(pytal.cheats)
+	SAFE_DELETE(pytal.modules)
+	SAFE_DELETE(pytal.plugin)
+	SAFE_DELETE(pytal.game)
 
 	console->Print("Cya :)\n");
 
@@ -248,7 +245,7 @@ void SAR::Unload() {
 	CrashHandler::Cleanup();
 }
 
-CON_COMMAND(sar_session, "sar_session - prints the current tick of the server since it has loaded\n") {
+CON_COMMAND(pytal_session, "pytal_session - prints the current tick of the server since it has loaded\n") {
 	auto tick = session->GetTick();
 	console->Print("Session Tick: %i (%.3f)\n", tick, engine->ToTime(tick));
 	if (*engine->demorecorder->m_bRecording) {
@@ -260,39 +257,39 @@ CON_COMMAND(sar_session, "sar_session - prints the current tick of the server si
 		console->Print("Demo Player Tick: %i (%.3f)\n", tick, engine->ToTime(tick));
 	}
 }
-CON_COMMAND(sar_about, "sar_about - prints info about SAR plugin\n") {
+CON_COMMAND(pytal_about, "pytal_about - prints info about PYTAL plugin\n") {
 	console->Print("SourceAutoRecord is a speedrun plugin for Source Engine games.\n");
-	console->Print("More information at: https://github.com/p2sr/SourceAutoRecord or https://wiki.portal2.sr/SAR\n");
-	console->Print("Game: %s\n", sar.game->Version());
-	console->Print("Version: " SAR_VERSION "\n");
-	console->Print("Built: " SAR_BUILT "\n");
+	console->Print("More information at: https://github.com/p2sr/SourceAutoRecord or https://wiki.portal2.sr/PYTAL\n");
+	console->Print("Game: %s\n", pytal.game->Version());
+	console->Print("Version: " PYTAL_VERSION "\n");
+	console->Print("Built: " PYTAL_BUILT "\n");
 }
-CON_COMMAND(sar_cvars_dump, "sar_cvars_dump - dumps all cvars to a file\n") {
+CON_COMMAND(pytal_cvars_dump, "pytal_cvars_dump - dumps all cvars to a file\n") {
 	std::ofstream file("game.cvars", std::ios::out | std::ios::trunc | std::ios::binary);
 	auto result = cvars->Dump(file);
 	file.close();
 
 	console->Print("Dumped %i cvars to game.cvars!\n", result);
 }
-CON_COMMAND(sar_cvars_dump_doc, "sar_cvars_dump_doc - dumps all SAR cvars to a file\n") {
-	std::ofstream file("sar.cvars", std::ios::out | std::ios::trunc | std::ios::binary);
+CON_COMMAND(pytal_cvars_dump_doc, "pytal_cvars_dump_doc - dumps all PYTAL cvars to a file\n") {
+	std::ofstream file("pytal.cvars", std::ios::out | std::ios::trunc | std::ios::binary);
 	auto result = cvars->DumpDoc(file);
 	file.close();
 
-	console->Print("Dumped %i cvars to sar.cvars!\n", result);
+	console->Print("Dumped %i cvars to pytal.cvars!\n", result);
 }
-CON_COMMAND(sar_cvars_lock, "sar_cvars_lock - restores default flags of unlocked cvars\n") {
+CON_COMMAND(pytal_cvars_lock, "pytal_cvars_lock - restores default flags of unlocked cvars\n") {
 	cvars->Lock();
 }
-CON_COMMAND(sar_cvars_unlock, "sar_cvars_unlock - unlocks all special cvars\n") {
+CON_COMMAND(pytal_cvars_unlock, "pytal_cvars_unlock - unlocks all special cvars\n") {
 	cvars->Unlock();
 }
-CON_COMMAND(sar_cvarlist, "sar_cvarlist - lists all SAR cvars and unlocked engine cvars\n") {
+CON_COMMAND(pytal_cvarlist, "pytal_cvarlist - lists all PYTAL cvars and unlocked engine cvars\n") {
 	cvars->ListAll();
 }
-CON_COMMAND(sar_rename, "sar_rename <name> - changes your name\n") {
+CON_COMMAND(pytal_rename, "pytal_rename <name> - changes your name\n") {
 	if (args.ArgC() != 2) {
-		return console->Print(sar_rename.ThisPtr()->m_pszHelpString);
+		return console->Print(pytal_rename.ThisPtr()->m_pszHelpString);
 	}
 
 	auto name = Variable("name");
@@ -302,51 +299,51 @@ CON_COMMAND(sar_rename, "sar_rename <name> - changes your name\n") {
 		name.EnableChange();
 	}
 }
-CON_COMMAND(sar_exit, "sar_exit - removes all function hooks, registered commands and unloads the module\n") {
-	sar.Unload();
+CON_COMMAND(pytal_exit, "pytal_exit - removes all function hooks, registered commands and unloads the module\n") {
+	pytal.Unload();
 }
 
 #pragma region Unused callbacks
-void SAR::Pause() {
+void PYTAL::Pause() {
 }
-void SAR::UnPause() {
+void PYTAL::UnPause() {
 }
-const char *SAR::GetPluginDescription() {
-	return SAR_PLUGIN_SIGNATURE;
+const char *PYTAL::GetPluginDescription() {
+	return PYTAL_PLUGIN_SIGNATURE;
 }
-void SAR::LevelInit(char const *pMapName) {
+void PYTAL::LevelInit(char const *pMapName) {
 }
-void SAR::ServerActivate(void *pEdictList, int edictCount, int clientMax) {
+void PYTAL::ServerActivate(void *pEdictList, int edictCount, int clientMax) {
 }
-void SAR::GameFrame(bool simulating) {
+void PYTAL::GameFrame(bool simulating) {
 }
-void SAR::LevelShutdown() {
+void PYTAL::LevelShutdown() {
 }
-void SAR::ClientFullyConnect(void *pEdict) {
+void PYTAL::ClientFullyConnect(void *pEdict) {
 }
-void SAR::ClientActive(void *pEntity) {
+void PYTAL::ClientActive(void *pEntity) {
 }
-void SAR::ClientDisconnect(void *pEntity) {
+void PYTAL::ClientDisconnect(void *pEntity) {
 }
-void SAR::ClientPutInServer(void *pEntity, char const *playername) {
+void PYTAL::ClientPutInServer(void *pEntity, char const *playername) {
 }
-void SAR::SetCommandClient(int index) {
+void PYTAL::SetCommandClient(int index) {
 }
-void SAR::ClientSettingsChanged(void *pEdict) {
+void PYTAL::ClientSettingsChanged(void *pEdict) {
 }
-int SAR::ClientConnect(bool *bAllowConnect, void *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen) {
+int PYTAL::ClientConnect(bool *bAllowConnect, void *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen) {
 	return 0;
 }
-int SAR::ClientCommand(void *pEntity, const void *&args) {
+int PYTAL::ClientCommand(void *pEntity, const void *&args) {
 	return 0;
 }
-int SAR::NetworkIDValidated(const char *pszUserName, const char *pszNetworkID) {
+int PYTAL::NetworkIDValidated(const char *pszUserName, const char *pszNetworkID) {
 	return 0;
 }
-void SAR::OnQueryCvarValueFinished(int iCookie, void *pPlayerEntity, int eStatus, const char *pCvarName, const char *pCvarValue) {
+void PYTAL::OnQueryCvarValueFinished(int iCookie, void *pPlayerEntity, int eStatus, const char *pCvarName, const char *pCvarValue) {
 }
-void SAR::OnEdictAllocated(void *edict) {
+void PYTAL::OnEdictAllocated(void *edict) {
 }
-void SAR::OnEdictFreed(const void *edict) {
+void PYTAL::OnEdictFreed(const void *edict) {
 }
 #pragma endregion

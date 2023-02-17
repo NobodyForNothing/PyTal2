@@ -76,7 +76,7 @@ public:
     ////////////////////////////////////////////////////////////
     /// \brief Bind the socket to a specific port
     ///
-    /// Binding the socket to a port is necessary for being
+    /// Binding the socket to a port is necesary for being
     /// able to receive data on that port.
     /// You can use the special value Socket::AnyPort to tell the
     /// system to automatically pick an available port, and then
@@ -244,7 +244,7 @@ private:
 /// If the socket is bound to a port, it is automatically
 /// unbound from it when the socket is destroyed. However,
 /// you can unbind the socket explicitly with the Unbind
-/// function if necessary, to stop receiving messages or
+/// function if necesary, to stop receiving messages or
 /// make the port available for other sockets.
 ///
 /// Usage example:

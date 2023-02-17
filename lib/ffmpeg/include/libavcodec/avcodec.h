@@ -1262,7 +1262,7 @@ typedef struct AVCodecContext {
      * This callback is called at the beginning of each frame to get data
      * buffer(s) for it. There may be one contiguous buffer for all the data or
      * there may be a buffer per each data plane or anything in between. What
-     * this means is, you may set however many entries in buf[] you feel necessary.
+     * this means is, you may set however many entries in buf[] you feel necesary.
      * Each buffer must be reference-counted using the AVBuffer API (see description
      * of buf[] below).
      *
@@ -1287,7 +1287,7 @@ typedef struct AVCodecContext {
      *   * otherwise extended_data must point to data
      * - buf[] must contain one or more pointers to AVBufferRef structures. Each of
      *   the frame's data and extended_data pointers must be contained in these. That
-     *   is, one AVBufferRef for each allocated chunk of memory, not necessarily one
+     *   is, one AVBufferRef for each allocated chunk of memory, not necespytalily one
      *   AVBufferRef per data[] entry. See: av_buffer_create(), av_buffer_alloc(),
      *   and av_buffer_ref().
      * - extended_buf and nb_extended_buf must be allocated with av_malloc() by
@@ -3139,7 +3139,7 @@ int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub,
  *                  size set to 0); in this case, it is considered a flush
  *                  packet, which signals the end of the stream. Sending the
  *                  first flush packet will return success. Subsequent ones are
- *                  unnecessary and will return AVERROR_EOF. If the decoder
+ *                  unnecesary and will return AVERROR_EOF. If the decoder
  *                  still has frames buffered, it will return them after sending
  *                  a flush packet.
  *
@@ -3248,7 +3248,7 @@ int avcodec_receive_packet(AVCodecContext *avctx, AVPacket *avpkt);
  *
  * Alternatively to this, an API user can set AVCodecContext.hw_device_ctx,
  * which sets up AVCodecContext.hw_frames_ctx fully automatically, and makes
- * it unnecessary to call this function or having to care about
+ * it unnecesary to call this function or having to care about
  * AVHWFramesContext initialization at all.
  *
  * There are a number of requirements for calling this function:
@@ -3612,7 +3612,7 @@ void av_parser_close(AVCodecParserContext *s);
  * Encode a frame of audio.
  *
  * Takes input samples from frame and writes the next output packet, if
- * available, to avpkt. The output packet does not necessarily contain data for
+ * available, to avpkt. The output packet does not necespytalily contain data for
  * the most recent frame, as encoders can delay, split, and combine input frames
  * internally as needed.
  *
@@ -3656,7 +3656,7 @@ int avcodec_encode_audio2(AVCodecContext *avctx, AVPacket *avpkt,
  * Encode a frame of video.
  *
  * Takes input raw video data from frame and writes the next output packet, if
- * available, to avpkt. The output packet does not necessarily contain data for
+ * available, to avpkt. The output packet does not necespytalily contain data for
  * the most recent frame, as encoders can delay and reorder input frames
  * internally as needed.
  *
@@ -3890,7 +3890,7 @@ int avcodec_default_execute2(AVCodecContext *c, int (*func)(AVCodecContext *c2, 
  * to contain the specified samples amount. The filled AVFrame data
  * pointers will point to this buffer.
  *
- * AVFrame extended_data channel pointers are allocated if necessary for
+ * AVFrame extended_data channel pointers are allocated if necesary for
  * planar audio.
  *
  * @param frame       the AVFrame

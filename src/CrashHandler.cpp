@@ -1,6 +1,6 @@
 #include "CrashHandler.hpp"
 
-#include "SAR.hpp"
+#include "PYTAL.hpp"
 #include "Version.hpp"
 
 #include <stdint.h>
@@ -94,7 +94,7 @@ static void handler(int signal, siginfo_t *info, void *ucontext)
 		finish;
 	}
 
-	fputs("SAR " SAR_VERSION " (Built " SAR_BUILT ")\n", f);
+	fputs("PYTAL " PYTAL_VERSION " (Built " PYTAL_BUILT ")\n", f);
 	fprintf(f, "%s caused by address 0x%08x\n", signame, (uint32_t)faultaddr);
 
 #ifdef _WIN32
@@ -180,14 +180,14 @@ void CrashHandler::Init() {
 	HANDLE process = GetCurrentProcess();
 	SymInitialize(process, 0, true);
 	IMAGEHLP_MODULE info;
-	SymGetModuleInfo(GetCurrentProcess(), (DWORD)&Utils::GetSARPath, &info);
+	SymGetModuleInfo(GetCurrentProcess(), (DWORD)&Utils::GetPYTALPath, &info);
 	SymLoadModule(process, NULL, NULL, NULL, info.BaseOfImage, info.ImageSize);
 }
 
 void CrashHandler::Cleanup() {
 	IMAGEHLP_MODULE info;
 	HANDLE process = GetCurrentProcess();
-	SymGetModuleInfo(process, (DWORD)&Utils::GetSARPath, &info);
+	SymGetModuleInfo(process, (DWORD)&Utils::GetPYTALPath, &info);
 	SymUnloadModule(process, info.BaseOfImage);
 	RemoveVectoredExceptionHandler(&handler);
 	SymCleanup(GetCurrentProcess());

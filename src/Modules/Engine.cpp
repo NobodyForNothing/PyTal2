@@ -22,7 +22,7 @@
 #include "Game.hpp"
 #include "Hook.hpp"
 #include "Interface.hpp"
-#include "SAR.hpp"
+#include "PYTAL.hpp"
 #include "Server.hpp"
 #include "Utils.hpp"
 #include "Variable.hpp"
@@ -48,16 +48,16 @@ Variable sv_portal_players;
 Variable fps_max;
 Variable mat_norendering;
 
-Variable sar_record_at("sar_record_at", "-1", -1, "Start recording a demo at the tick specified. Will use sar_record_at_demo_name.\n", 0);
-Variable sar_record_at_demo_name("sar_record_at_demo_name", "chamber", "Name of the demo automatically recorded.\n", 0);
-Variable sar_record_at_increment("sar_record_at_increment", "0", "Increment automatically the demo name.\n");
+Variable pytal_record_at("pytal_record_at", "-1", -1, "Start recording a demo at the tick specified. Will use pytal_record_at_demo_name.\n", 0);
+Variable pytal_record_at_demo_name("pytal_record_at_demo_name", "chamber", "Name of the demo automatically recorded.\n", 0);
+Variable pytal_record_at_increment("pytal_record_at_increment", "0", "Increment automatically the demo name.\n");
 
-Variable sar_pause_at("sar_pause_at", "-1", -1, "Pause at the specified tick. -1 to deactivate it.\n");
-Variable sar_pause_for("sar_pause_for", "0", 0, "Pause for this amount of ticks.\n");
+Variable pytal_pause_at("pytal_pause_at", "-1", -1, "Pause at the specified tick. -1 to deactivate it.\n");
+Variable pytal_pause_for("pytal_pause_for", "0", 0, "Pause for this amount of ticks.\n");
 
-Variable sar_tick_debug("sar_tick_debug", "0", 0, 3, "Output debugging information to the console related to ticks and frames.\n");
+Variable pytal_tick_debug("pytal_tick_debug", "0", 0, 3, "Output debugging information to the console related to ticks and frames.\n");
 
-Variable sar_cm_rightwarp("sar_cm_rightwarp", "0", "Fix CM wrongwarp.\n");
+Variable pytal_cm_rightwarp("pytal_cm_rightwarp", "0", "Fix CM wrongwarp.\n");
 
 float g_cur_fps = 0.0f;
 
@@ -155,8 +155,8 @@ int Engine::PointToScreen(const Vector &point, Vector &screen) {
 void Engine::SafeUnload(const char *postCommand) {
 
 	// give events some time to execute before plugin is disabled
-	Event::Trigger<Event::SAR_UNLOAD>({});
-	this->ExecuteCommand("sar_exit");
+	Event::Trigger<Event::PYTAL_UNLOAD>({});
+	this->ExecuteCommand("pytal_exit");
 
 	if (postCommand) {
 		this->SendToCommandBuffer(postCommand, SAFE_UNLOAD_TICK_DELAY);
@@ -265,19 +265,19 @@ bool Engine::TraceFromCamera(float distMax, int mask, CGameTrace &tr) {
 
 ON_EVENT(PRE_TICK) {
 	if (!engine->demoplayer->IsPlaying()) {
-		if (sar_pause_at.GetInt() == -1 || (!sv_cheats.GetBool() && sar_pause_at.GetInt() > 0)) {
-			if (sar_pause_at.GetInt() != -1 && !engine->hasPaused) {
-				console->Print("sar_pause_at values over 0 are only usable with sv_cheats\n");
+		if (pytal_pause_at.GetInt() == -1 || (!sv_cheats.GetBool() && pytal_pause_at.GetInt() > 0)) {
+			if (pytal_pause_at.GetInt() != -1 && !engine->hasPaused) {
+				console->Print("pytal_pause_at values over 0 are only usable with sv_cheats\n");
 			}
-			engine->hasPaused = true;  // We don't want to randomly pause if the user sets sar_pause_at in this session
+			engine->hasPaused = true;  // We don't want to randomly pause if the user sets pytal_pause_at in this session
 			engine->isPausing = false;
 		} else {
-			if (!engine->hasPaused && session->isRunning && event.tick >= sar_pause_at.GetInt()) {
+			if (!engine->hasPaused && session->isRunning && event.tick >= pytal_pause_at.GetInt()) {
 				engine->ExecuteCommand("pause", true);
 				engine->hasPaused = true;
 				engine->isPausing = true;
 				engine->pauseTick = server->tickCount;
-			} else if (sar_pause_for.GetInt() > 0 && engine->isPausing && server->tickCount >= sar_pause_for.GetInt() + engine->pauseTick) {
+			} else if (pytal_pause_for.GetInt() > 0 && engine->isPausing && server->tickCount >= pytal_pause_for.GetInt() + engine->pauseTick) {
 				engine->ExecuteCommand("unpause", true);
 				engine->isPausing = false;
 			}
@@ -316,7 +316,7 @@ DETOUR(Engine::Disconnect, bool bShowMainMenu) {
 
 // CClientState::SetSignonState
 DETOUR(Engine::SetSignonState, int state, int count, void *unk) {
-	if (sar_tick_debug.GetInt() >= 2) {
+	if (pytal_tick_debug.GetInt() >= 2) {
 		int host, server, client;
 		engine->GetTicks(host, server, client);
 		console->Print("CClientState::SetSignonState %d (host=%d server=%d client=%d)\n", state, host, server, client);
@@ -356,11 +356,11 @@ void Engine::GetTicks(int &host, int &server, int &client) {
 
 // CEngine::Frame
 DETOUR(Engine::Frame) {
-	if (sar_tick_debug.GetInt() >= 2) {
+	if (pytal_tick_debug.GetInt() >= 2) {
 		static int lastServer, lastClient;
 		int host, server, client;
 		engine->GetTicks(host, server, client);
-		if (server != lastServer || client != lastClient || sar_tick_debug.GetInt() >= 3) {
+		if (server != lastServer || client != lastClient || pytal_tick_debug.GetInt() >= 3) {
 			console->Print("CEngine::Frame (host=%d server=%d client=%d)\n", host, server, client);
 			lastServer = server;
 			lastClient = client;
@@ -467,19 +467,19 @@ _def:
 
 // CSteam3Client::OnGameOverlayActivated
 DETOUR_B(Engine::OnGameOverlayActivated, GameOverlayActivated_t *pGameOverlayActivated) {
-	engine->shouldSuppressPause = sar_disable_steam_pause.GetBool() && pGameOverlayActivated->m_bActive;
+	engine->shouldSuppressPause = pytal_disable_steam_pause.GetBool() && pGameOverlayActivated->m_bActive;
 	return Engine::OnGameOverlayActivatedBase(thisptr, pGameOverlayActivated);
 }
 
 DETOUR_COMMAND(Engine::plugin_load) {
-	// Prevent crash when trying to load SAR twice or try to find the module in
+	// Prevent crash when trying to load PYTAL twice or try to find the module in
 	// the plugin list if the initial search thread failed
 	if (args.ArgC() >= 2) {
 		auto file = std::string(args[1]);
-		if (Utils::EndsWith(file, std::string(MODULE("sar"))) || Utils::EndsWith(file, std::string("sar"))) {
-			if (sar.GetPlugin()) {
-				sar.plugin->ptr->m_bDisable = true;
-				console->PrintActive("SAR: Plugin fully loaded!\n");
+		if (Utils::EndsWith(file, std::string(MODULE("pytal"))) || Utils::EndsWith(file, std::string("pytal"))) {
+			if (pytal.GetPlugin()) {
+				pytal.plugin->ptr->m_bDisable = true;
+				console->PrintActive("PYTAL: Plugin fully loaded!\n");
 			}
 			return;
 		}
@@ -488,7 +488,7 @@ DETOUR_COMMAND(Engine::plugin_load) {
 	Engine::plugin_load_callback(args);
 }
 DETOUR_COMMAND(Engine::plugin_unload) {
-	if (args.ArgC() >= 2 && sar.GetPlugin() && std::atoi(args[1]) == sar.plugin->index) {
+	if (args.ArgC() >= 2 && pytal.GetPlugin() && std::atoi(args[1]) == pytal.plugin->index) {
 		engine->SafeUnload();
 	} else {
 		engine->plugin_unload_callback(args);
@@ -532,7 +532,7 @@ DETOUR_COMMAND(Engine::load) {
 	if (Game::mapNames.empty() && networkManager.isConnected) {
 		networkManager.disableSyncForLoad = true;
 	}
-	if (sar_cm_rightwarp.GetBool() && sv_bonus_challenge.GetBool()) {
+	if (pytal_cm_rightwarp.GetBool() && sv_bonus_challenge.GetBool()) {
 		sv_bonus_challenge.SetValue(false);
 	}
 	engine->tickLoadStarted = engine->GetTick();
@@ -588,7 +588,7 @@ bool __fastcall ProcessTick_Detour(void *thisptr, void *unused, void *pack)
 bool ProcessTick_Detour(void *thisptr, void *pack)
 #endif
 {
-	if (sar_tick_debug.GetInt() >= 1) {
+	if (pytal_tick_debug.GetInt() >= 1) {
 		int host, server, client;
 		engine->GetTicks(host, server, client);
 		console->Print("NET_Tick %d (host=%d server=%d client=%d)\n", *(int *)((char *)pack + 16), host, server, client);
@@ -687,10 +687,10 @@ ON_EVENT(SESSION_END) {
 	g_bink_last_frames.clear();
 }
 
-Variable sar_bink_respect_host_time("sar_bink_respect_host_time", "1", "Make BINK video playback respect host time.\n");
+Variable pytal_bink_respect_host_time("pytal_bink_respect_host_time", "1", "Make BINK video playback respect host time.\n");
 
 ON_EVENT(FRAME) {
-	if (!sar_bink_respect_host_time.GetBool()) {
+	if (!pytal_bink_respect_host_time.GetBool()) {
 		g_bink_override_active = false;
 		g_bink_last_frames.clear();
 		return;
@@ -956,7 +956,7 @@ bool Engine::Init() {
 	Host_AccumulateTime = (void (*)(float))Memory::Scan(this->Name(), "55 8B EC 51 F3 0F 10 05 ? ? ? ? F3 0F 58 45 08 8B 0D ? ? ? ? F3 0F 11 05 ? ? ? ? 8B 01 8B 50 20 53 B3 01 FF D2", 0);
 	host_frametime = *(float **)((uintptr_t)Host_AccumulateTime + 92);
 #else
-	if (sar.game->Is(SourceGame_EIPRelPIC)) {
+	if (pytal.game->Is(SourceGame_EIPRelPIC)) {
 		Host_AccumulateTime = (void (*)(float))Memory::Scan(this->Name(), "83 EC 1C 8B 15 ? ? ? ? F3 0F 10 05 ? ? ? ? F3 0F 58 44 24 20 F3 0F 11 05 ? ? ? ? 8B 02 8B 40 24 3D ? ? ? ? 0F 85 41 03 00 00", 0);
 		host_frametime = *(float **)((uintptr_t)Host_AccumulateTime + 81);
 	} else {
@@ -970,7 +970,7 @@ bool Engine::Init() {
 #ifdef _WIN32
 	_Host_RunFrame_Render = (void (*)())Memory::Scan(this->Name(), "A1 ? ? ? ? 85 C0 75 1B 8B 0D ? ? ? ? 8B 01 8B 50 40 68 ? ? ? ? FF D2 A3 ? ? ? ? 85 C0 74 0D 6A 02 6A F6 50 E8 ? ? ? ? 83 C4 0C", 0);
 #else
-	if (sar.game->Is(SourceGame_EIPRelPIC)) {
+	if (pytal.game->Is(SourceGame_EIPRelPIC)) {
 		_Host_RunFrame_Render = (void (*)())Memory::Scan(this->Name(), "55 89 E5 57 56 53 83 EC 1C 8B 1D ? ? ? ? 85 DB 0F 85 69 02 00 00 E8 64 FF FF FF A1 ? ? ? ? 80 3D C5 ? ? ? ? 8B 78 30 74 12 83 EC 08 6A 00", 0);
 	} else {
 		_Host_RunFrame_Render = (void (*)())Memory::Scan(this->Name(), "55 89 E5 57 56 53 83 EC 2C 8B 35 ? ? ? ? 85 F6 0F 95 C0 89 C6 0F 85 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 80 3D ? ? ? ? 00 8B 78 30", 0);
@@ -984,7 +984,7 @@ bool Engine::Init() {
 	this->readCustomDataInjectAddr = Memory::Scan(this->Name(), "8D 45 E8 50 8D 4D BC 51 8D 4F 04 E8 ? ? ? ? 8B 4D BC 83 F9 FF", 12);
 	this->readConsoleCommandInjectAddr = Memory::Scan(this->Name(), "8B 45 F4 50 68 FE 04 00 00 68 ? ? ? ? 8D 4D 90 E8 ? ? ? ? 8D 4F 04 E8", 26);
 #else
-	if (sar.game->Is(SourceGame_EIPRelPIC)) {
+	if (pytal.game->Is(SourceGame_EIPRelPIC)) {
 		this->readCustomDataInjectAddr = Memory::Scan(this->Name(), "8D 85 C4 FE FF FF 83 EC 04 8D B5 E8 FE FF FF 56 50 FF B5 94 FE FF FF E8", 24);
 		this->readConsoleCommandInjectAddr = Memory::Scan(this->Name(), "FF B5 AC FE FF FF 8D B5 E8 FE FF FF 68 FE 04 00 00 68 ? ? ? ? 56 E8 ? ? ? ? 58 FF B5 94 FE FF FF E8", 36);
 	} else {

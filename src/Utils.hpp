@@ -26,7 +26,7 @@ namespace Utils {
 	bool ICompare(const std::string &a, const std::string &b);
 	std::string ssprintf(const char *fmt, ...);
 	uint8_t ConvertFromSrgb(uint8_t s);
-	std::string GetSARPath();
+	std::string GetPYTALPath();
 	std::optional<Color> GetColor(const char *str, bool to_linear = false);
 	Color HSVToRGB(float H, float S, float V);
 }  // namespace Utils

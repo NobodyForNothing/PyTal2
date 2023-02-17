@@ -12,7 +12,7 @@
 #include "Hook.hpp"
 #include "Interface.hpp"
 #include "Offsets.hpp"
-#include "SAR.hpp"
+#include "PYTAL.hpp"
 #include "Server.hpp"
 #include "Utils.hpp"
 
@@ -25,11 +25,11 @@ REDECL(EngineDemoPlayer::stopdemo_callback);
 
 static std::vector<std::string> g_demoBlacklist;
 
-Variable sar_demo_blacklist("sar_demo_blacklist", "0", "Stop a set of commands from being run by demo playback.\n");
-Variable sar_demo_blacklist_all("sar_demo_blacklist_all", "0", "Stop all commands from being run by demo playback.\n");
-CON_COMMAND(sar_demo_blacklist_addcmd, "sar_demo_blacklist_addcmd <command> - add a command to the demo blacklist\n") {
+Variable pytal_demo_blacklist("pytal_demo_blacklist", "0", "Stop a set of commands from being run by demo playback.\n");
+Variable pytal_demo_blacklist_all("pytal_demo_blacklist_all", "0", "Stop all commands from being run by demo playback.\n");
+CON_COMMAND(pytal_demo_blacklist_addcmd, "pytal_demo_blacklist_addcmd <command> - add a command to the demo blacklist\n") {
 	if (args.ArgC() == 1) {
-		console->Print(sar_demo_blacklist_addcmd.ThisPtr()->m_pszHelpString);
+		console->Print(pytal_demo_blacklist_addcmd.ThisPtr()->m_pszHelpString);
 	} else {
 		g_demoBlacklist.push_back({args.m_pArgSBuffer + args.m_nArgv0Size});
 	}
@@ -47,7 +47,7 @@ static bool startsWith(const char *pre, const char *str) {
 }
 
 bool EngineDemoPlayer::ShouldBlacklistCommand(const char *cmd) {
-	if (startsWith("sar_demo_blacklist", cmd)) {
+	if (startsWith("pytal_demo_blacklist", cmd)) {
 		return true;
 	}
 
@@ -56,15 +56,15 @@ bool EngineDemoPlayer::ShouldBlacklistCommand(const char *cmd) {
 		return true;
 	}
 
-	// SPECIAL CASE: these commands override sar_demo_blacklist_all, since
+	// SPECIAL CASE: these commands override pytal_demo_blacklist_all, since
 	// without them coop timing doesn't work
 	if (startsWith("playvideo_end_level_transition", cmd)) return false;
 	if (startsWith("stop_transition_videos_fadeout", cmd)) return false;
 	if (startsWith("ss_force_primary_fullscreen", cmd)) return false;
 
-	if (sar_demo_blacklist_all.GetBool()) return true;
+	if (pytal_demo_blacklist_all.GetBool()) return true;
 
-	if (sar_demo_blacklist.GetBool()) {
+	if (pytal_demo_blacklist.GetBool()) {
 		for (auto &s : g_demoBlacklist) {
 			if (startsWith(s.c_str(), cmd)) {
 				return true;
@@ -75,7 +75,7 @@ bool EngineDemoPlayer::ShouldBlacklistCommand(const char *cmd) {
 	return false;
 }
 
-static Variable sar_demo_remove_broken("sar_demo_remove_broken", "1", "Whether to remove broken frames from demo playback\n");
+static Variable pytal_demo_remove_broken("pytal_demo_remove_broken", "1", "Whether to remove broken frames from demo playback\n");
 
 static bool g_waitingForSession = false;
 ON_EVENT(SESSION_START) { g_waitingForSession = false; }
@@ -241,8 +241,8 @@ DETOUR(EngineDemoPlayer::StartPlayback, const char *filename, bool bAsTimeDemo) 
 			engine->demoplayer->levelName = demo.mapName;
 			g_demoStart = demo.firstPositivePacketTick;
 			Renderer::segmentEndTick = demo.segmentTicks;
-			if (!sar_demo_remove_broken.GetBool()) Event::Trigger<Event::DEMO_START>({});
-			g_demoFixing = sar_demo_remove_broken.GetBool();
+			if (!pytal_demo_remove_broken.GetBool()) Event::Trigger<Event::DEMO_START>({});
+			g_demoFixing = pytal_demo_remove_broken.GetBool();
 		} else {
 			console->Print("Could not parse \"%s\"!\n", engine->demoplayer->DemoName);
 		}
@@ -269,7 +269,7 @@ DETOUR(EngineDemoPlayer::StopPlayback) {
 	return EngineDemoPlayer::StopPlayback(thisptr);
 }
 
-Variable sar_demo_portal_interp_fix("sar_demo_portal_interp_fix", "1", "Fix eye interpolation through portals in demo playback.\n");
+Variable pytal_demo_portal_interp_fix("pytal_demo_portal_interp_fix", "1", "Fix eye interpolation through portals in demo playback.\n");
 
 static inline void matrixAngleTransform(VMatrix mat, QAngle *ang) {
 	Vector forward, up;
@@ -291,7 +291,7 @@ static struct {
 
 void EngineDemoPlayer::OverrideView(CViewSetup *view) {
 	if (!this->IsPlaying()) return;
-	if (!sar_demo_portal_interp_fix.GetBool()) return;
+	if (!pytal_demo_portal_interp_fix.GetBool()) return;
 
 	int slot = GET_SLOT();
 
@@ -337,7 +337,7 @@ void InterpolateDemoCommand_Detour(void *thisptr, int slot, int target_tick, Dem
 	InterpolateDemoCommand(thisptr, slot, target_tick, prev, next);
 	InterpolateDemoCommand_Hook.Enable();
 
-	if (sar_demo_portal_interp_fix.GetBool()) {
+	if (pytal_demo_portal_interp_fix.GetBool()) {
 		if (!g_portal_interp_state[slot].set_limits) {
 			g_portal_interp_state[slot].saved_interplimit = Variable("demo_interplimit").GetFloat();
 			g_portal_interp_state[slot].saved_avellimit = Variable("demo_avellimit").GetFloat();
@@ -422,7 +422,7 @@ void InterpolateDemoCommand_Detour(void *thisptr, int slot, int target_tick, Dem
 
 		// we're pretty sure we're transitioning from entry to exit. as a
 		// sanity check, ensure that we start in front of entry and finish
-		// in front of exit. XXX: okay let's not, this doesn't necessarily work for
+		// in front of exit. XXX: okay let's not, this doesn't necespytalily work for
 		// slightly-slanted portals since this is the player origin rather than the
 		// camera
 		/*
@@ -468,7 +468,7 @@ bool EngineDemoPlayer::Init() {
 #ifdef _WIN32
 	InterpolateDemoCommand = (decltype(InterpolateDemoCommand))Memory::Scan(this->Name(), "55 8B EC 83 EC 10 56 8B F1 8B 4D 10 57 8B BE B4 05 00 00 83 C1 04 89 75 F4 89 7D F0 E8 ? ? ? ? 8B 4D 14 83 C1 04");
 #else
-	if (sar.game->Is(SourceGame_EIPRelPIC)) {
+	if (pytal.game->Is(SourceGame_EIPRelPIC)) {
 		InterpolateDemoCommand = (decltype(InterpolateDemoCommand))Memory::Scan(this->Name(), "55 57 56 53 83 EC 10 8B 44 24 24 8B 5C 24 2C 8B 88 B0 05 00 00 8B 44 24 30 8D 70 04 8D 90 9C 00 00 00 89 F0 F3 0F 10 40 04");
 	} else {
 		InterpolateDemoCommand = (decltype(InterpolateDemoCommand))Memory::Scan(this->Name(), "55 31 C9 89 E5 57 56 53 83 EC 3C 89 4D F0 8B 45 08 8B 4D 14 8B 80 B0 05 00 00 89 45 B8 8B 45 14 83 C0 04 89 45 D0");
@@ -491,13 +491,13 @@ void EngineDemoPlayer::Shutdown() {
 
 // Commands
 
-DECL_COMMAND_FILE_COMPLETION(sar_startdemos, ".dem", engine->GetGameDirectory(), 1)
-DECL_COMMAND_FILE_COMPLETION(sar_startdemosfolder, "/", engine->GetGameDirectory(), 1)
+DECL_COMMAND_FILE_COMPLETION(pytal_startdemos, ".dem", engine->GetGameDirectory(), 1)
+DECL_COMMAND_FILE_COMPLETION(pytal_startdemosfolder, "/", engine->GetGameDirectory(), 1)
 
-CON_COMMAND_F_COMPLETION(sar_startdemos, "sar_startdemos <demoname> - improved version of startdemos. Use 'stopdemo' to stop playing demos\n", 0, AUTOCOMPLETION_FUNCTION(sar_startdemos)) {
+CON_COMMAND_F_COMPLETION(pytal_startdemos, "pytal_startdemos <demoname> - improved version of startdemos. Use 'stopdemo' to stop playing demos\n", 0, AUTOCOMPLETION_FUNCTION(pytal_startdemos)) {
 	// Always print a useful message for the user if not used correctly
 	if (args.ArgC() != 2) {
-		return console->Print(sar_startdemos.ThisPtr()->m_pszHelpString);
+		return console->Print(pytal_startdemos.ThisPtr()->m_pszHelpString);
 	}
 
 	engine->demoplayer->demoQueue.clear();
@@ -553,9 +553,9 @@ CON_COMMAND_F_COMPLETION(sar_startdemos, "sar_startdemos <demoname> - improved v
 
 	//Demos are played in Engine::Frame
 }
-CON_COMMAND_F_COMPLETION(sar_startdemosfolder, "sar_startdemosfolder <folder name> - plays all the demos in the specified folder by alphabetic order\n", 0, AUTOCOMPLETION_FUNCTION(sar_startdemosfolder)) {
+CON_COMMAND_F_COMPLETION(pytal_startdemosfolder, "pytal_startdemosfolder <folder name> - plays all the demos in the specified folder by alphabetic order\n", 0, AUTOCOMPLETION_FUNCTION(pytal_startdemosfolder)) {
 	if (args.ArgC() < 2) {
-		return console->Print(sar_startdemosfolder.ThisPtr()->m_pszHelpString);
+		return console->Print(pytal_startdemosfolder.ThisPtr()->m_pszHelpString);
 	}
 
 	engine->demoplayer->demoQueue.clear();
@@ -588,9 +588,9 @@ CON_COMMAND_F_COMPLETION(sar_startdemosfolder, "sar_startdemosfolder <folder nam
 
 	EngineDemoPlayer::stopdemo_callback(args);
 }
-CON_COMMAND_COMPLETION(sar_skiptodemo, "sar_skiptodemo <demoname> - skip demos in demo queue to this demo\n", ({engine->demoplayer->demoQueue})) {
+CON_COMMAND_COMPLETION(pytal_skiptodemo, "pytal_skiptodemo <demoname> - skip demos in demo queue to this demo\n", ({engine->demoplayer->demoQueue})) {
 	if (args.ArgC() < 2) {
-		return console->Print(sar_skiptodemo.ThisPtr()->m_pszHelpString);
+		return console->Print(pytal_skiptodemo.ThisPtr()->m_pszHelpString);
 	}
 
 	auto it = std::find(engine->demoplayer->demoQueue.begin(), engine->demoplayer->demoQueue.end(), args[1]);
@@ -601,14 +601,14 @@ CON_COMMAND_COMPLETION(sar_skiptodemo, "sar_skiptodemo <demoname> - skip demos i
 
 	EngineDemoPlayer::stopdemo_callback(args);
 }
-CON_COMMAND(sar_nextdemo, "sar_nextdemo - plays the next demo in demo queue\n") {
+CON_COMMAND(pytal_nextdemo, "pytal_nextdemo - plays the next demo in demo queue\n") {
 	if (++engine->demoplayer->currentDemoID >= engine->demoplayer->demoQueueSize) {
 		return engine->demoplayer->ClearDemoQueue();
 	}
 
 	EngineDemoPlayer::stopdemo_callback(args);
 }
-CON_COMMAND(sar_demo_replay, "sar_demo_replay - play the last recorded or played demo\n") {
+CON_COMMAND(pytal_demo_replay, "pytal_demo_replay - play the last recorded or played demo\n") {
 	if (engine->demoplayer->replayName.size() == 0) {
 		return console->Print("No demo to replay\n");
 	}

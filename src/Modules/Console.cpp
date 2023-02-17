@@ -45,14 +45,14 @@ ConsoleListener::~ConsoleListener() {
 
 Console *console;
 
-CON_COMMAND_F(sar_echo, "sar_echo <color> <string...> - echo a string to console with a given color\n", FCVAR_DONTRECORD) {
+CON_COMMAND_F(pytal_echo, "pytal_echo <color> <string...> - echo a string to console with a given color\n", FCVAR_DONTRECORD) {
 	if (args.ArgC() < 2) {
-		return console->Print(sar_echo.ThisPtr()->m_pszHelpString);
+		return console->Print(pytal_echo.ThisPtr()->m_pszHelpString);
 	}
 
 	std::optional<Color> col = Utils::GetColor(args[1], false);
 	if (!col) {
-		return console->Print(sar_echo.ThisPtr()->m_pszHelpString);
+		return console->Print(pytal_echo.ThisPtr()->m_pszHelpString);
 	}
 
 	const char *str;
@@ -68,14 +68,14 @@ CON_COMMAND_F(sar_echo, "sar_echo <color> <string...> - echo a string to console
 	console->ColorMsg(*col, "%s\n", str);
 }
 
-CON_COMMAND_F(sar_echo_nolf, "sar_echo_nolf <color> <string...> - echo a string to console with a given color and no trailing line feed\n", FCVAR_DONTRECORD) {
+CON_COMMAND_F(pytal_echo_nolf, "pytal_echo_nolf <color> <string...> - echo a string to console with a given color and no trailing line feed\n", FCVAR_DONTRECORD) {
 	if (args.ArgC() < 2) {
-		return console->Print(sar_echo_nolf.ThisPtr()->m_pszHelpString);
+		return console->Print(pytal_echo_nolf.ThisPtr()->m_pszHelpString);
 	}
 
 	std::optional<Color> col = Utils::GetColor(args[1], false);
 	if (!col) {
-		return console->Print(sar_echo_nolf.ThisPtr()->m_pszHelpString);
+		return console->Print(pytal_echo_nolf.ThisPtr()->m_pszHelpString);
 	}
 
 	const char *str;

@@ -159,7 +159,7 @@ public:
     ///
     /// The public address is the address of the computer from the
     /// internet point of view, i.e. something like 89.54.1.169.
-    /// It is necessary for communications over the world wide web.
+    /// It is necesary for communications over the world wide web.
     /// The only way to get a public address is to ask it to a
     /// distant website; as a consequence, this function depends on
     /// both your network connection and the server, and may be

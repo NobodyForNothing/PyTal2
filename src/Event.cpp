@@ -2,18 +2,18 @@
 
 #include <map>
 
-SarInitHandler::SarInitHandler(std::function<void()> cb)
+PytalInitHandler::PytalInitHandler(std::function<void()> cb)
 	: cb(cb) {
-		SarInitHandler::GetHandlers().push_back(this);
+		PytalInitHandler::GetHandlers().push_back(this);
 }
 
-void SarInitHandler::RunAll() {
-	for (auto h : SarInitHandler::GetHandlers()) {
+void PytalInitHandler::RunAll() {
+	for (auto h : PytalInitHandler::GetHandlers()) {
 		h->cb();
 	}
 }
 
-std::vector<SarInitHandler *> &SarInitHandler::GetHandlers() {
-	static std::vector<SarInitHandler *> handlers;
+std::vector<PytalInitHandler *> &PytalInitHandler::GetHandlers() {
+	static std::vector<PytalInitHandler *> handlers;
 	return handlers;
 }

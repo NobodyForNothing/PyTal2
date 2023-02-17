@@ -626,7 +626,7 @@ int avio_read_partial(AVIOContext *s, unsigned char *buf, int size);
  * @{
  *
  * @note return 0 if EOF, so you cannot use it if EOF handling is
- *       necessary
+ *       necesary
  */
 int          avio_r8  (AVIOContext *s);
 unsigned int avio_rl16(AVIOContext *s);
@@ -685,7 +685,7 @@ int avio_get_str16be(AVIOContext *pb, int maxlen, char *buf, int buflen);
  * If this flag is not set, operations on the context will never return
  * AVERROR(EAGAIN).
  * Note that this flag does not affect the opening/connecting of the
- * context. Connecting a protocol will always block if necessary (e.g. on
+ * context. Connecting a protocol will always block if necesary (e.g. on
  * network protocols) but never hang (e.g. on busy devices).
  * Warning: non-blocking protocols is work-in-progress; this flag may be
  * silently ignored.

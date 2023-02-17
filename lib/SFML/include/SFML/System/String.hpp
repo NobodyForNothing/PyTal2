@@ -645,7 +645,7 @@ SFML_SYSTEM_API String operator +(const String& left, const String& right);
 /// \endcode
 ///
 /// Conversions involving ANSI strings use the default user locale. However
-/// it is possible to use a custom locale if necessary:
+/// it is possible to use a custom locale if necesary:
 /// \code
 /// std::locale locale;
 /// sf::String s;

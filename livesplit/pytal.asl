@@ -10,7 +10,7 @@ state("hl2") { /* Portal (1910503) */ }
 
 startup
 {
-    vars.SAR = new MemoryWatcherList();
+    vars.PYTAL = new MemoryWatcherList();
     vars.FindInterface = (Func<Process, bool>)((proc) =>
     {
         // TimerInterface
@@ -34,14 +34,14 @@ startup
                 vars.Ipt = new MemoryWatcher<float>(result + sizeof(int));
                 vars.Action = new MemoryWatcher<int>(result + sizeof(int) + sizeof(float));
 
-                vars.SAR.Clear();
-                vars.SAR.AddRange(new MemoryWatcher[]
+                vars.PYTAL.Clear();
+                vars.PYTAL.AddRange(new MemoryWatcher[]
                 {
                     vars.Total,
                     vars.Ipt,
                     vars.Action
                 });
-                vars.SAR.UpdateAll(proc);
+                vars.PYTAL.UpdateAll(proc);
 
                 print("[ASL] pubInterface->ipt = " + vars.Ipt.Current.ToString());
                 return true;
@@ -75,16 +75,16 @@ update
     if (vars.Init)
     {
         timer.IsGameTimePaused = true;
-        vars.SAR.UpdateAll(game);
+        vars.PYTAL.UpdateAll(game);
 
-        if (modules.FirstOrDefault(m => m.ModuleName == "sar.dll") == null)
+        if (modules.FirstOrDefault(m => m.ModuleName == "pytal.dll") == null)
         {
             vars.Init = false;
         }
     }
     else
     {
-        if (modules.FirstOrDefault(m => m.ModuleName == "sar.dll") != null)
+        if (modules.FirstOrDefault(m => m.ModuleName == "pytal.dll") != null)
         {
             vars.Init = vars.FindInterface(game);
         }

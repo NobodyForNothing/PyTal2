@@ -49,7 +49,7 @@
 #define FF_DXVA2_WORKAROUND_INTEL_CLEARVIDEO    2 ///< Work around for Direct3D11 and old Intel GPUs with ClearVideo interface
 
 /**
- * This structure is used to provides the necessary configurations and data
+ * This structure is used to provides the necesary configurations and data
  * to the Direct3D11 FFmpeg HWAccel implementation.
  *
  * The application must make it available as AVCodecContext.hwaccel_context.

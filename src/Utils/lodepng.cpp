@@ -3276,7 +3276,7 @@ static unsigned get_color_profile(ColorProfile *profile, const unsigned char *in
 				break;
 
 			/*a color is considered good for 8-bit if the first byte and the second byte are equal,
-        (so if it's divisible through 257), NOT necessarily if the second byte is 0*/
+        (so if it's divisible through 257), NOT necespytalily if the second byte is 0*/
 			if (!profile->sixteenbit_done && (((r & 255) != ((r >> 8) & 255)) || ((g & 255) != ((g >> 8) & 255)) || ((b & 255) != ((b >> 8) & 255)))) {
 				profile->sixteenbit = 1;
 				profile->sixteenbit_done = 1;
@@ -4224,7 +4224,7 @@ static void decodeGeneric(unsigned char **out, unsigned *w, unsigned *h, LodePNG
 		ucvector scanlines;
 		ucvector_init(&scanlines);
 
-		/*maximum final image length is already reserved in the vector's length - this is not really necessary*/
+		/*maximum final image length is already reserved in the vector's length - this is not really necesary*/
 		if (!ucvector_resize(&scanlines, lodepng_get_raw_size(*w, *h, &state->info_png.color) + *h)) {
 			state->error = 83; /*alloc fail*/
 		}

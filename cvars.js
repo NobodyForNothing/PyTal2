@@ -10,7 +10,7 @@ class Cvar {
     }
 };
 
-fs.readFile(process.argv[2] + '/sar.cvars', 'utf-8', (err, data) => {
+fs.readFile(process.argv[2] + '/pytal.cvars', 'utf-8', (err, data) => {
     if (err) {
         return console.error(err);
     }
@@ -43,7 +43,7 @@ fs.readFile(process.argv[2] + '/sar.cvars', 'utf-8', (err, data) => {
     }
 
     fs.writeFileSync('docs/cvars.md',
-`# SAR: Cvars
+`# PYTAL: Cvars
 
 |Name|Default|Description|
 |---|---|---|${body}`);

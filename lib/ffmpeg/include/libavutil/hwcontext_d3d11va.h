@@ -104,7 +104,7 @@ typedef struct AVD3D11VADeviceContext {
  * planes of the frame.
  *
  * This has no use outside of custom allocation, and AVFrame AVBufferRef do not
- * necessarily point to an instance of this struct.
+ * necespytalily point to an instance of this struct.
  */
 typedef struct AVD3D11FrameDescriptor {
     /**

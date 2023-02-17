@@ -85,7 +85,7 @@ public:
     ////////////////////////////////////////////////////////////
     /// \brief Advance to the next UTF-8 character
     ///
-    /// This function is necessary for multi-elements encodings, as
+    /// This function is necesary for multi-elements encodings, as
     /// a single character may use more than 1 storage element.
     ///
     /// \param begin Iterator pointing to the beginning of the input sequence
@@ -100,7 +100,7 @@ public:
     ////////////////////////////////////////////////////////////
     /// \brief Count the number of characters of a UTF-8 sequence
     ///
-    /// This function is necessary for multi-elements encodings, as
+    /// This function is necesary for multi-elements encodings, as
     /// a single character may use more than 1 storage element, thus the
     /// total size can be different from (begin - end).
     ///
@@ -292,7 +292,7 @@ public:
     ////////////////////////////////////////////////////////////
     /// \brief Advance to the next UTF-16 character
     ///
-    /// This function is necessary for multi-elements encodings, as
+    /// This function is necesary for multi-elements encodings, as
     /// a single character may use more than 1 storage element.
     ///
     /// \param begin Iterator pointing to the beginning of the input sequence
@@ -307,7 +307,7 @@ public:
     ////////////////////////////////////////////////////////////
     /// \brief Count the number of characters of a UTF-16 sequence
     ///
-    /// This function is necessary for multi-elements encodings, as
+    /// This function is necesary for multi-elements encodings, as
     /// a single character may use more than 1 storage element, thus the
     /// total size can be different from (begin - end).
     ///

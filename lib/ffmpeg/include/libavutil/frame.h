@@ -812,7 +812,7 @@ void av_frame_move_ref(AVFrame *dst, AVFrame *src);
  * - nb_samples and channel_layout for audio
  *
  * This function will fill AVFrame.data and AVFrame.buf arrays and, if
- * necessary, allocate and fill AVFrame.extended_data and AVFrame.extended_buf.
+ * necesary, allocate and fill AVFrame.extended_data and AVFrame.extended_buf.
  * For planar formats, one buffer will be allocated for each plane.
  *
  * @warning: if frame already has been allocated, calling this function will

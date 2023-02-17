@@ -199,7 +199,7 @@
     <ClCompile Include="Plugin.cpp">
       <Filter>SourceAutoRecord</Filter>
     </ClCompile>
-    <ClCompile Include="SAR.cpp">
+    <ClCompile Include="PYTAL.cpp">
       <Filter>SourceAutoRecord</Filter>
     </ClCompile>
     <ClCompile Include="Variable.cpp">
@@ -693,7 +693,7 @@
     <ClInclude Include="Plugin.hpp">
       <Filter>SourceAutoRecord</Filter>
     </ClInclude>
-    <ClInclude Include="SAR.hpp">
+    <ClInclude Include="PYTAL.hpp">
       <Filter>SourceAutoRecord</Filter>
     </ClInclude>
     <ClInclude Include="Utils.hpp">

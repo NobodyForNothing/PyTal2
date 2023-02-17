@@ -226,14 +226,14 @@ extern Variable sv_portal_players;
 extern Variable fps_max;
 extern Variable mat_norendering;
 
-extern Variable sar_record_at;
-extern Variable sar_record_at_demo_name;
-extern Variable sar_record_at_increment;
+extern Variable pytal_record_at;
+extern Variable pytal_record_at_demo_name;
+extern Variable pytal_record_at_increment;
 
-extern Variable sar_pause_at;
-extern Variable sar_pause_for;
+extern Variable pytal_pause_at;
+extern Variable pytal_pause_for;
 
-extern Variable sar_tick_debug;
+extern Variable pytal_tick_debug;
 
 extern float g_cur_fps;
 
