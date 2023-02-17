@@ -1,7 +1,7 @@
 .PHONY: all clean cvars
 .FORCE:
 
-CXX=g++-10
+CXX=g++-9
 SDIR=src
 ODIR=obj
 
@@ -31,19 +31,19 @@ VERSION=$(shell git describe --tags)
 DEPS=$(OBJS:%.o=%.d)
 
 WARNINGS=-Wall -Wno-parentheses -Wno-unknown-pragmas -Wno-delete-non-virtual-dtor
-CXXFLAGS=-std=c++17 -m32 $(WARNINGS) -I$(SDIR) -fPIC -D_GNU_SOURCE -Ilib/ffmpeg/include -Ilib/SFML/include -Ilib/curl/include -DSFML_STATIC -DCURL_STATICLIB
-LDFLAGS=-m32 -shared -lstdc++fs -Llib/ffmpeg/lib/linux -lavformat -lavcodec -lavutil -lswscale -lswresample -lx264 -lx265 -lvorbis -lvorbisenc -lvorbisfile -logg -lopus -lvpx -Llib/SFML/lib/linux -lsfml -Llib/curl/lib/linux -lcurl -lssl -lcrypto -lnghttp2
+CXXFLAGS=-std=c++17 -m32 $(WARNINGS) -I$(SDIR) -fPIC -D_GNU_SOURCE -Ilib/ffmpeg/include -Ilib/SFML/include -Ilib/curl/include -DSFML_STATIC -DCURL_STATICLIB -I/usr/include/python3.8
+LDFLAGS=-m32 -shared -lstdc++fs -Llib/ffmpeg/lib/linux -lavformat -lavcodec -lavutil -lswscale -lswresample -lx264 -lx265 -lvorbis -lvorbisenc -lvorbisfile -logg -lopus -lvpx -Llib/SFML/lib/linux -lsfml -Llib/curl/lib/linux -lcurl -lssl -lcrypto -lnghttp2 -Llib/python3.9 -lpython3.9
 
 # Import config.mk, which can be used for optional config
 -include config.mk
 
-all: sar.so
+all: pytal.so
 clean:
-	rm -rf $(ODIR) sar.so src/Version.hpp
+	rm -rf $(ODIR) pytal.so src/Version.hpp
 
 -include $(DEPS)
 
-sar.so: src/Version.hpp $(OBJS)
+pytal.so: src/Version.hpp $(OBJS)
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 $(ODIR)/%.o: $(SDIR)/%.cpp
@@ -51,11 +51,6 @@ $(ODIR)/%.o: $(SDIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -MMD -c $< -o $@
 
 src/Version.hpp: .FORCE
-	echo "#define SAR_VERSION \"$(VERSION)\"" >"$@"
-	if [ -z "$$RELEASE_BUILD" ]; then echo "#define SAR_DEV_BUILD 1" >>"$@"; fi
-	echo "#define SAR_DEMO_SIGN_PUBKEY { $$DEMO_SIGN_PUBKEY }" >>"$@"
-	echo "#define SAR_DEMO_SIGN_PRIVKEY { $$DEMO_SIGN_PRIVKEY }" >>"$@"
+	echo "#define PYTAL_VERSION \"$(VERSION)\"" >"$@"
+	if [ -z "$$RELEASE_BUILD" ]; then echo "#define PYTAL_DEV_BUILD 1" >>"$@"; fi
 
-cvars: docs/cvars.md
-docs/cvars.md:
-	node cvars.js "$(STEAM)Portal 2"
