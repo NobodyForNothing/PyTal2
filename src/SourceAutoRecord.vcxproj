@@ -431,7 +431,7 @@
     <ClInclude Include="Modules\VGui.hpp" />
     <ClInclude Include="Offsets.hpp" />
     <ClInclude Include="Plugin.hpp" />
-    <ClInclude Include="PYTAL.hpp" />
+    <ClInclude Include="PytalMain.hpp" />
     <ClInclude Include="Utils.hpp" />
     <ClInclude Include="Utils\ed25519\ed25519.h" />
     <ClInclude Include="Utils\ed25519\fe.h" />

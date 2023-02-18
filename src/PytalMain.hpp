@@ -12,10 +12,15 @@
 #include <thread>
 
 #define PYTAL_BUILT __TIME__ " " __DATE__
+#define PLUGIN_NAME "PyTal2"
+#define PLUGIN_VAR_NAME pytal
+#define PLUGIN_DESC "PyTal2 is a plugin to run python code in Portal 2."
+#define PLUGIN_BUILT __TIME__ " " __DATE__
+#define PLUGIN_WEB "https://nekzor.github.io/SourceAutoRecord or https://wiki.portal2.sr/SAR"
 
 #define SAFE_UNLOAD_TICK_DELAY 33
 
-class PYTAL : public IServerPluginCallbacks {
+class PytalMain : public IServerPluginCallbacks {
 public:
 	Modules *modules;
 	Features *features;
@@ -28,7 +33,7 @@ private:
 	bool unloading;
 
 public:
-	PYTAL();
+	PytalMain();
 
 	virtual bool Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory);
 	virtual void Unload();
@@ -56,4 +61,4 @@ public:
 	void SearchPlugin();
 };
 
-extern PYTAL pytal;
+extern PytalMain pytal;

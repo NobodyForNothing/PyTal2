@@ -2,7 +2,7 @@
 #include "Interface.hpp"
 #include "Module.hpp"
 #include "Offsets.hpp"
-#include "PYTAL.hpp"
+#include "PytalMain.hpp"
 #include "Utils.hpp"
 
 #include <map>

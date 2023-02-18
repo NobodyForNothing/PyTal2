@@ -2,27 +2,12 @@
 
 #include "Client.hpp"
 #include "Console.hpp"
-#include "EngineDemoPlayer.hpp"
-#include "EngineDemoRecorder.hpp"
 #include "Event.hpp"
 #include "InputSystem.hpp"
-#include "Features/AchievementTracker.hpp"
-#include "Features/Camera.hpp"
-#include "Features/Cvars.hpp"
-#include "Features/Demo/DemoParser.hpp"
-#include "Features/Demo/NetworkGhostPlayer.hpp"
-#include "Features/NetMessage.hpp"
-#include "Features/OverlayRender.hpp"
-#include "Features/Renderer.hpp"
-#include "Features/SegmentedTools.hpp"
-#include "Features/Session.hpp"
-#include "Features/Speedrun/SpeedrunTimer.hpp"
-#include "Features/Stitcher.hpp"
-#include "Features/Tas/TasPlayer.hpp"
 #include "Game.hpp"
 #include "Hook.hpp"
 #include "Interface.hpp"
-#include "PYTAL.hpp"
+#include "PytalMain.hpp"
 #include "Server.hpp"
 #include "Utils.hpp"
 #include "Variable.hpp"
@@ -48,17 +33,6 @@ Variable sv_portal_players;
 Variable fps_max;
 Variable mat_norendering;
 
-Variable pytal_record_at("pytal_record_at", "-1", -1, "Start recording a demo at the tick specified. Will use pytal_record_at_demo_name.\n", 0);
-Variable pytal_record_at_demo_name("pytal_record_at_demo_name", "chamber", "Name of the demo automatically recorded.\n", 0);
-Variable pytal_record_at_increment("pytal_record_at_increment", "0", "Increment automatically the demo name.\n");
-
-Variable pytal_pause_at("pytal_pause_at", "-1", -1, "Pause at the specified tick. -1 to deactivate it.\n");
-Variable pytal_pause_for("pytal_pause_for", "0", 0, "Pause for this amount of ticks.\n");
-
-Variable pytal_tick_debug("pytal_tick_debug", "0", 0, 3, "Output debugging information to the console related to ticks and frames.\n");
-
-Variable pytal_cm_rightwarp("pytal_cm_rightwarp", "0", "Fix CM wrongwarp.\n");
-
 float g_cur_fps = 0.0f;
 
 REDECL(Engine::Disconnect);
@@ -70,8 +44,6 @@ REDECL(Engine::GetMouseDelta);
 #endif
 REDECL(Engine::Frame);
 REDECL(Engine::PurgeUnusedModels);
-REDECL(Engine::OnGameOverlayActivated);
-REDECL(Engine::OnGameOverlayActivatedBase);
 REDECL(Engine::ReadCustomData);
 REDECL(Engine::ReadConsoleCommand);
 REDECL(Engine::plugin_load_callback);
@@ -102,7 +74,7 @@ void Engine::ExecuteCommand(const char *cmd, bool immediately) {
 	}
 }
 int Engine::GetTick() {
-	return (this->GetMaxClients() < 2 || engine->demoplayer->IsPlaying()) ? *this->tickcount : TIME_TO_TICKS(*this->net_time);
+	return (this->GetMaxClients() < 2) ? *this->tickcount : TIME_TO_TICKS(*this->net_time);
 }
 float Engine::ToTime(int tick) {
 	return tick * *this->interval_per_tick;
@@ -183,13 +155,6 @@ std::string Engine::GetCurrentMapName() {
 
 	std::string map = this->GetLevelNameShort(this->engineClient->ThisPtr());
 
-	if (session->isRunning || map != "") {
-		// Forward-ify all the slashes
-		std::replace(map.begin(), map.end(), '\\', '/');
-
-		last_map = map;
-	}
-
 	return last_map;
 }
 
@@ -198,14 +163,11 @@ bool Engine::IsCoop() {
 		using _IsMultiplayer = bool (__rescall *)(void *thisptr);
 		return Memory::VMT<_IsMultiplayer>(*client->gamerules, Offsets::IsMultiplayer)(*client->gamerules);
 	}
-	return sv_portal_players.GetInt() == 2 || (engine->demoplayer->IsPlaying() && engine->GetMaxClients() >= 2);
+	return sv_portal_players.GetInt() == 2 || (engine->GetMaxClients() >= 2);
 }
 
 bool Engine::IsOrange() {
 	static bool isOrange;
-	if (session->signonState == SIGNONSTATE_FULL) {
-		isOrange = this->IsCoop() && !engine->hoststate->m_activeGame && !engine->demoplayer->IsPlaying();
-	}
 	return isOrange;
 }
 bool Engine::IsSplitscreen() {
@@ -263,27 +225,7 @@ bool Engine::TraceFromCamera(float distMax, int mask, CGameTrace &tr) {
 	return this->Trace(camPos, angle, distMax, mask, filter, tr);
 }
 
-ON_EVENT(PRE_TICK) {
-	if (!engine->demoplayer->IsPlaying()) {
-		if (pytal_pause_at.GetInt() == -1 || (!sv_cheats.GetBool() && pytal_pause_at.GetInt() > 0)) {
-			if (pytal_pause_at.GetInt() != -1 && !engine->hasPaused) {
-				console->Print("pytal_pause_at values over 0 are only usable with sv_cheats\n");
-			}
-			engine->hasPaused = true;  // We don't want to randomly pause if the user sets pytal_pause_at in this session
-			engine->isPausing = false;
-		} else {
-			if (!engine->hasPaused && session->isRunning && event.tick >= pytal_pause_at.GetInt()) {
-				engine->ExecuteCommand("pause", true);
-				engine->hasPaused = true;
-				engine->isPausing = true;
-				engine->pauseTick = server->tickCount;
-			} else if (pytal_pause_for.GetInt() > 0 && engine->isPausing && server->tickCount >= pytal_pause_for.GetInt() + engine->pauseTick) {
-				engine->ExecuteCommand("unpause", true);
-				engine->isPausing = false;
-			}
-		}
-	}
-}
+// ON_EVENT(PRE_TICK) {}
 
 ON_EVENT(PRE_TICK) {
 	if (engine->shouldPauseForSync && event.tick >= 0) {
@@ -310,32 +252,14 @@ float Engine::GetHostTime() {
 
 // CClientState::Disconnect
 DETOUR(Engine::Disconnect, bool bShowMainMenu) {
-	session->Ended();
 	return Engine::Disconnect(thisptr, bShowMainMenu);
 }
 
-// CClientState::SetSignonState
-DETOUR(Engine::SetSignonState, int state, int count, void *unk) {
-	if (pytal_tick_debug.GetInt() >= 2) {
-		int host, server, client;
-		engine->GetTicks(host, server, client);
-		console->Print("CClientState::SetSignonState %d (host=%d server=%d client=%d)\n", state, host, server, client);
-	}
-	auto ret = Engine::SetSignonState(thisptr, state, count, unk);
-	session->Changed(state);
-	return ret;
-}
 
 // CVEngineServer::ChangeLevel
 DETOUR(Engine::ChangeLevel, const char *s1, const char *s2) {
 	if (s1 && engine->GetCurrentMapName() != s1) engine->isLevelTransition = true;
 	return Engine::ChangeLevel(thisptr, s1, s2);
-}
-
-// CVEngineServer::ClientCommandKeyValues
-DETOUR(Engine::ClientCommandKeyValues, void* pEdict, KeyValues* pKeyValues) {
-	AchievementTracker::CheckKeyValuesForAchievement(pKeyValues);
-	return Engine::ClientCommandKeyValues(thisptr, pEdict, pKeyValues);
 }
 
 #ifndef _WIN32
@@ -355,121 +279,7 @@ void Engine::GetTicks(int &host, int &server, int &client) {
 }
 
 // CEngine::Frame
-DETOUR(Engine::Frame) {
-	if (pytal_tick_debug.GetInt() >= 2) {
-		static int lastServer, lastClient;
-		int host, server, client;
-		engine->GetTicks(host, server, client);
-		if (server != lastServer || client != lastClient || pytal_tick_debug.GetInt() >= 3) {
-			console->Print("CEngine::Frame (host=%d server=%d client=%d)\n", host, server, client);
-			lastServer = server;
-			lastClient = client;
-		}
-	}
-
-	if (engine->hoststate->m_currentState != session->prevState) {
-		session->Changed();
-	}
-	session->prevState = engine->hoststate->m_currentState;
-
-	if (engine->hoststate->m_activeGame || std::strlen(engine->m_szLevelName) == 0) {
-		SpeedrunTimer::Update();
-	}
-
-	if ((engine->demoplayer->IsPlaying() || engine->IsOrange()) && engine->lastTick != session->GetTick()) {
-		Event::Trigger<Event::PRE_TICK>({false, session->GetTick()});
-		Event::Trigger<Event::POST_TICK>({false, session->GetTick()});
-	}
-
-	//demoplayer
-	if (engine->demoplayer->demoQueueSize > 0 && !engine->demoplayer->IsPlaying() && engine->demoplayer->IsPlaybackFixReady()) {
-		DemoParser parser;
-		auto name = engine->demoplayer->demoQueue[engine->demoplayer->currentDemoID];
-		engine->ExecuteCommand(Utils::ssprintf("playdemo \"%s\"", name.c_str()).c_str(), true);
-		if (++engine->demoplayer->currentDemoID >= engine->demoplayer->demoQueueSize) {
-			engine->demoplayer->ClearDemoQueue();
-		}
-	}
-
-	engine->lastTick = session->GetTick();
-
-	Renderer::Frame();
-	engine->demoplayer->HandlePlaybackFix();
-	Event::Trigger<Event::FRAME>({});
-	if (!engine->IsSkipping() && session->isRunning) Event::Trigger<Event::RENDER>({});
-
-	NetMessage::Update();
-
-	// stopping TAS player if outside of the game
-	if (!engine->hoststate->m_activeGame && tasPlayer->IsRunning()) {
-		tasPlayer->Stop(true);
-	}
-
-	return Engine::Frame(thisptr);
-}
-
-DETOUR(Engine::PurgeUnusedModels) {
-	auto start = std::chrono::high_resolution_clock::now();
-	auto result = Engine::PurgeUnusedModels(thisptr);
-	auto stop = std::chrono::high_resolution_clock::now();
-	console->DevMsg("PurgeUnusedModels - %dms\n", std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
-	return result;
-}
-
-DETOUR(Engine::ReadCustomData, int *callbackIndex, char **data) {
-	auto size = Engine::ReadCustomData(thisptr, callbackIndex, data);
-	if (callbackIndex && data && *callbackIndex == 0 && size > 8) {
-		engine->demoplayer->CustomDemoData(*data + 8, size - 8);
-	}
-	return size;
-}
-
-DETOUR_T(const char *, Engine::ReadConsoleCommand) {
-	const char *cmd = Engine::ReadConsoleCommand(thisptr);
-	if (engine->demoplayer->ShouldBlacklistCommand(cmd)) {
-		return "";
-	}
-	return cmd;
-}
-
-#ifdef _WIN32
-// CDemoFile::ReadCustomData
-void __fastcall ReadCustomData_Wrapper(int demoFile, int edx, int unk1, int unk2) {
-	Engine::ReadCustomData((void *)demoFile, nullptr, nullptr);
-}
-// CDemoSmootherPanel::ParseSmoothingInfo
-DETOUR_MID_MH(Engine::ParseSmoothingInfo_Mid) {
-	__asm {
-		// Check if we have dem_customdata
-        cmp eax, 8
-        jne _orig
-
-			// Parse stuff that does not get parsed (thanks valve)
-        push edi
-        push edi
-        mov ecx, esi
-        call ReadCustomData_Wrapper
-
-        jmp Engine::ParseSmoothingInfo_Skip
-
-_orig:  // Original overwritten instructions
-        add eax, -3
-        cmp eax, 6
-        ja _def
-
-        jmp Engine::ParseSmoothingInfo_Continue
-
-_def:
-        jmp Engine::ParseSmoothingInfo_Default
-	}
-}
-#endif
-
-// CSteam3Client::OnGameOverlayActivated
-DETOUR_B(Engine::OnGameOverlayActivated, GameOverlayActivated_t *pGameOverlayActivated) {
-	engine->shouldSuppressPause = pytal_disable_steam_pause.GetBool() && pGameOverlayActivated->m_bActive;
-	return Engine::OnGameOverlayActivatedBase(thisptr, pGameOverlayActivated);
-}
+//DETOUR(Engine::Frame) {}
 
 DETOUR_COMMAND(Engine::plugin_load) {
 	// Prevent crash when trying to load PYTAL twice or try to find the module in
@@ -484,7 +294,6 @@ DETOUR_COMMAND(Engine::plugin_load) {
 			return;
 		}
 	}
-
 	Engine::plugin_load_callback(args);
 }
 DETOUR_COMMAND(Engine::plugin_unload) {
@@ -501,7 +310,6 @@ DETOUR_COMMAND(Engine::quit) {
 	engine->SafeUnload("quit");
 }
 DETOUR_COMMAND(Engine::help) {
-	cvars->PrintHelp(args);
 }
 DETOUR_COMMAND(Engine::gameui_activate) {
 	if (engine->shouldSuppressPause) {
@@ -510,278 +318,6 @@ DETOUR_COMMAND(Engine::gameui_activate) {
 	}
 
 	Engine::gameui_activate_callback(args);
-}
-DETOUR_COMMAND(Engine::playvideo_end_level_transition) {
-	if (engine->GetMaxClients() >= 2 && !engine->IsOrange() && client->GetChallengeStatus() != CMStatus::CHALLENGE) {
-		SpeedrunTimer::Pause();
-	}
-
-	if (engine->GetMaxClients() >= 2) {
-		engine->isLevelTransition = true;
-	}
-
-	Engine::playvideo_end_level_transition_callback(args);
-}
-DETOUR_COMMAND(Engine::stop_transition_videos_fadeout) {
-	engine->startedTransitionFadeout = true;
-	Engine::stop_transition_videos_fadeout_callback(args);
-}
-DETOUR_COMMAND(Engine::load) {
-	// Loading a save should bypass ghost_sync if there's no map
-	// list for this game
-	if (Game::mapNames.empty() && networkManager.isConnected) {
-		networkManager.disableSyncForLoad = true;
-	}
-	if (pytal_cm_rightwarp.GetBool() && sv_bonus_challenge.GetBool()) {
-		sv_bonus_challenge.SetValue(false);
-	}
-	engine->tickLoadStarted = engine->GetTick();
-	Engine::load_callback(args);
-}
-ON_EVENT(PRE_TICK) {
-	if (engine->tickLoadStarted >= 0 && (engine->GetTick() < engine->tickLoadStarted || engine->GetTick() > engine->tickLoadStarted + 15)) {
-		engine->tickLoadStarted = -1;
-	}
-}
-DETOUR_COMMAND(Engine::give) {
-	if (!sv_cheats.GetBool() && !strcasecmp(args[1], "challenge_mode_end_node")) {
-		console->Print("This is cheating! If you really want to do it, set sv_cheats 1\n");
-		return;
-	}
-	Engine::give_callback(args);
-}
-DETOUR_COMMAND(Engine::exec) {
-	bool is_config_exec = (args.ArgC() == 3 && !strcmp(args[1], "config.cfg")) || (args.ArgC() == 2 && !strcmp(args[1], "config_default.cfg"));
-
-	Engine::exec_callback(args);
-
-	static bool has_execd_config = false;
-	if (is_config_exec && !has_execd_config) {
-		has_execd_config = true;
-		Event::Trigger<Event::CONFIG_EXEC>({});
-	}
-}
-
-DECL_CVAR_CALLBACK(ss_force_primary_fullscreen) {
-	if (engine->GetMaxClients() >= 2 && client->GetChallengeStatus() != CMStatus::CHALLENGE && ss_force_primary_fullscreen.GetInt() == 0) {
-		if (engine->startedTransitionFadeout && !engine->forcedPrimaryFullscreen && !engine->IsOrange()) {
-			engine->forcedPrimaryFullscreen = true;
-			SpeedrunTimer::Resume();
-			SpeedrunTimer::OnLoad();
-		}
-	}
-}
-
-static bool(__rescall *g_ProcessTick)(void *thisptr, void *pack);
-
-#ifdef _WIN32
-bool __fastcall ProcessTick_Detour(void *thisptr, void *unused, void *pack);
-#else
-bool ProcessTick_Detour(void *thisptr, void *pack);
-#endif
-
-static Hook ProcessTick_Hook(&ProcessTick_Detour);
-
-#ifdef _WIN32
-bool __fastcall ProcessTick_Detour(void *thisptr, void *unused, void *pack)
-#else
-bool ProcessTick_Detour(void *thisptr, void *pack)
-#endif
-{
-	if (pytal_tick_debug.GetInt() >= 1) {
-		int host, server, client;
-		engine->GetTicks(host, server, client);
-		console->Print("NET_Tick %d (host=%d server=%d client=%d)\n", *(int *)((char *)pack + 16), host, server, client);
-	}
-	ProcessTick_Hook.Disable();
-	bool ret = g_ProcessTick(thisptr, pack);
-	ProcessTick_Hook.Enable();
-	return ret;
-}
-
-static unsigned g_advance = 0;
-static bool g_advancing = false;
-static bool g_skipping = false;
-
-void Engine::SetAdvancing(bool advancing) {
-	g_advancing = advancing;
-	if (!advancing) g_advance = 0;
-}
-
-bool Engine::IsAdvancing() {
-	return g_advancing;
-}
-
-void Engine::AdvanceTick() {
-	if (g_advancing) {
-		if (!engine->IsCoop() && sv_alternateticks.GetBool()) {
-			g_advance += 2;
-		} else {
-			g_advance += 1;
-		}
-	}
-}
-
-void Engine::SetSkipping(bool skipping) {
-	g_skipping = skipping;
-}
-
-bool Engine::IsSkipping() {
-	return g_skipping;
-}
-
-static float *host_frametime;
-void Host_AccumulateTime_Detour(float dt);
-void (*Host_AccumulateTime)(float dt);
-static Hook Host_AccumulateTime_Hook(&Host_AccumulateTime_Detour);
-void Host_AccumulateTime_Detour(float dt) {
-	if (!g_advancing || !session->isRunning) {
-		Host_AccumulateTime_Hook.Disable();
-		Host_AccumulateTime(dt);
-		Host_AccumulateTime_Hook.Enable();
-	} else if (g_advance > 0) {
-		Host_AccumulateTime_Hook.Disable();
-		Host_AccumulateTime(1.0f/60);
-		Host_AccumulateTime_Hook.Enable();
-		--g_advance;
-	} else {
-		*host_frametime = 0;
-	}
-}
-
-void _Host_RunFrame_Render_Detour();
-void (*_Host_RunFrame_Render)();
-static Hook _Host_RunFrame_Render_Hook(&_Host_RunFrame_Render_Detour);
-void _Host_RunFrame_Render_Detour() {
-	static uint64_t total_frames = 0;
-
-	uint64_t init_frames = total_frames;
-	total_frames += 1;
-
-	unsigned nticks = roundf(FPS_CHECK_WINDOW / *engine->interval_per_tick);
-	Scheduler::InHostTicks(nticks, [=]() {
-		uint64_t nframes = total_frames - init_frames;
-		g_cur_fps = (float)nframes / FPS_CHECK_WINDOW;
-	});
-	if (g_skipping && !g_advancing && !engine->IsGamePaused()) {
-		// We need to do this or else the client doesn't update viewangles
-		// in response to portal teleportations (and it probably breaks some
-		// other stuff too). This would normally be done within
-		// SCR_UpdateScreen, wrapping the main rendering calls
-		client->ClFrameStageNotify(5); // FRAME_RENDER_START
-		client->ClFrameStageNotify(6); // FRAME_RENDER_END
-	} else {
-		// Just do a normal render
-		_Host_RunFrame_Render_Hook.Disable();
-		_Host_RunFrame_Render();
-		_Host_RunFrame_Render_Hook.Enable();
-	}
-}
-
-static std::map<void *, float> g_bink_last_frames;
-static bool g_bink_override_active = false;
-
-ON_EVENT(SESSION_END) {
-	// we have no better way of detecting this - just hope all videos die
-	// on session end, else i guess we'll be skipping a frame
-	g_bink_last_frames.clear();
-}
-
-Variable pytal_bink_respect_host_time("pytal_bink_respect_host_time", "1", "Make BINK video playback respect host time.\n");
-
-ON_EVENT(FRAME) {
-	if (!pytal_bink_respect_host_time.GetBool()) {
-		g_bink_override_active = false;
-		g_bink_last_frames.clear();
-		return;
-	}
-
-	// only do the bink overrides if host_timescale, host_framerate, or
-	// frame advance is active - it's a very hacky patch, i don't trust it
-	bool host_ts = sv_cheats.GetBool() && Variable("host_timescale").GetFloat() > 0.0f && Variable("host_timescale").GetFloat() != 1.0f;
-	bool host_fr = (sv_cheats.GetBool() || engine->demoplayer->IsPlaying()) && Variable("host_framerate").GetFloat() != 0.0f;
-	if (engine->IsAdvancing() || host_ts || host_fr) {
-		g_bink_override_active = true;
-	} else {
-		g_bink_override_active = false;
-		g_bink_last_frames.clear();
-	}
-}
-
-static int framesToRun(void *bink) {
-	// BINK datastructure in bink.h from SE2007 leak
-	//uint32_t nframes = ((uint32_t *)bink)[2];
-	//uint32_t last_frame = ((uint32_t *)bink)[4];
-	double framerate = (double)((uint32_t *)bink)[5] / (double)((uint32_t *)bink)[6];
-
-	double now = engine->GetHostTime();
-	double last;
-
-	auto it = g_bink_last_frames.find(bink);
-	if (it == g_bink_last_frames.end()) {
-		g_bink_last_frames[bink] = now;
-		last = now;
-	} else {
-		last = it->second;
-	}
-
-	double to_run = (now - last) * framerate;
-	//int possible = nframes - last_frame - 1;
-
-	//if (to_run > possible) return possible;
-	return (int)to_run;
-}
-
-static void advFrame(void *bink) {
-	// BINK datastructure in bink.h from SE2007 leak
-	//uint32_t nframes = ((uint32_t *)bink)[2];
-	//uint32_t last_frame = ((uint32_t *)bink)[4];
-	double framerate = (double)((uint32_t *)bink)[5] / (double)((uint32_t *)bink)[6];
-
-	auto it = g_bink_last_frames.find(bink);
-	if (it == g_bink_last_frames.end()) {
-		g_bink_last_frames[bink] = engine->GetHostTime();
-	} else {
-		g_bink_last_frames[bink] += 1.0f / framerate;
-	}
-}
-
-void (__stdcall *BinkNextFrame)(void *bink);
-void __stdcall BinkNextFrame_Detour(void *bink);
-static Hook BinkNextFrame_Hook(&BinkNextFrame_Detour);
-void __stdcall BinkNextFrame_Detour(void *bink) {
-	BinkNextFrame_Hook.Disable();
-	BinkNextFrame(bink);
-	BinkNextFrame_Hook.Enable();
-	if (g_bink_override_active) advFrame(bink);
-}
-
-int (__stdcall *BinkShouldSkip)(void *bink);
-int __stdcall BinkShouldSkip_Detour(void *bink);
-static Hook BinkShouldSkip_Hook(&BinkShouldSkip_Detour);
-int __stdcall BinkShouldSkip_Detour(void *bink) {
-	if (g_bink_override_active) {
-		return framesToRun(bink) > 1;
-	} else {
-		BinkShouldSkip_Hook.Disable();
-		int ret = BinkShouldSkip(bink);
-		BinkShouldSkip_Hook.Enable();
-		return ret;
-	}
-}
-
-int (__stdcall *BinkWait)(void *bink);
-int __stdcall BinkWait_Detour(void *bink);
-static Hook BinkWait_Hook(&BinkWait_Detour);
-int __stdcall BinkWait_Detour(void *bink) {
-	if (g_bink_override_active) {
-		return framesToRun(bink) == 0;
-	} else {
-		BinkWait_Hook.Disable();
-		int ret = BinkWait(bink);
-		BinkWait_Hook.Enable();
-		return ret;
-	}
 }
 
 Color Engine::GetLightAtPoint(Vector point) {
@@ -798,9 +334,6 @@ Color Engine::GetLightAtPoint(Vector point) {
 
 	return Color{(uint8_t)(light.x * 255), (uint8_t)(light.y * 255), (uint8_t)(light.z * 255), 255};
 }
-
-static _CommandCompletionCallback playdemo_orig_completion;
-DECL_COMMAND_FILE_COMPLETION(playdemo, ".dem", engine->GetGameDirectory(), 1)
 
 static _CommandCompletionCallback exec_orig_completion;
 DECL_COMMAND_FILE_COMPLETION(exec, ".cfg", Utils::ssprintf("%s/cfg", engine->GetGameDirectory()), 1)
@@ -838,10 +371,6 @@ bool Engine::Init() {
 		this->m_bWaitEnabled2 = reinterpret_cast<bool *>((uintptr_t)this->m_bWaitEnabled + Offsets::CCommandBufferSize);
 
 		auto GetSteamAPIContext = this->engineClient->Original<uintptr_t (*)()>(Offsets::GetSteamAPIContext);
-		auto OnGameOverlayActivated = reinterpret_cast<_OnGameOverlayActivated *>(GetSteamAPIContext() + Offsets::OnGameOverlayActivated);
-
-		Engine::OnGameOverlayActivatedBase = *OnGameOverlayActivated;
-		*OnGameOverlayActivated = reinterpret_cast<_OnGameOverlayActivated>(Engine::OnGameOverlayActivated_Hook);
 
 		if (this->g_VEngineServer = Interface::Create(this->Name(), "VEngineServer022")) {
 			this->g_VEngineServer->Hook(Engine::ChangeLevel_Hook, Engine::ChangeLevel, Offsets::ChangeLevel);
@@ -858,12 +387,8 @@ bool Engine::Init() {
 		this->GetActiveSplitScreenPlayerSlot = this->engineClient->Original<_GetActiveSplitScreenPlayerSlot>(Offsets::GetActiveSplitScreenPlayerSlot);
 
 		if (this->cl = Interface::Create(clPtr)) {
-			if (!this->demoplayer)
-				this->demoplayer = new EngineDemoPlayer();
-			if (!this->demorecorder)
-				this->demorecorder = new EngineDemoRecorder();
 
-			this->cl->Hook(Engine::SetSignonState_Hook, Engine::SetSignonState, Offsets::Disconnect - 1);
+			// this->cl->Hook(Engine::SetSignonState_Hook, Engine::SetSignonState, Offsets::Disconnect - 1);
 			this->cl->Hook(Engine::Disconnect_Hook, Engine::Disconnect, Offsets::Disconnect);
 #if _WIN32
 			auto IServerMessageHandler_VMT = Memory::Deref<uintptr_t>((uintptr_t)this->cl->ThisPtr() + IServerMessageHandler_VMT_Offset);
@@ -872,13 +397,9 @@ bool Engine::Init() {
 			auto ProcessTick = this->cl->Original(Offsets::ProcessTick);
 #endif
 
-			g_ProcessTick = (decltype(g_ProcessTick))ProcessTick;
-			ProcessTick_Hook.SetFunc(ProcessTick);
-
 			tickcount = Memory::Deref<int *>(ProcessTick + Offsets::tickcount);
 
 			interval_per_tick = Memory::Deref<float *>(ProcessTick + Offsets::interval_per_tick);
-			SpeedrunTimer::SetIpt(*interval_per_tick);
 
 			auto SetSignonState = this->cl->Original(Offsets::Disconnect - 1);
 			auto HostState_OnClientConnected = Memory::Read(SetSignonState + Offsets::HostState_OnClientConnected);
@@ -908,18 +429,6 @@ bool Engine::Init() {
 		void *engAddr;
 		engAddr = Memory::DerefDeref<void *>(IsRunningSimulation + Offsets::eng);
 
-		if (this->eng = Interface::Create(engAddr)) {
-			if (this->tickcount && this->hoststate && this->m_szLevelName) {
-				this->eng->Hook(Engine::Frame_Hook, Engine::Frame, Offsets::Frame);
-			}
-		}
-
-		uintptr_t Init = s_EngineAPI->Original(Offsets::Init);
-		uintptr_t VideoMode_Create = Memory::Read(Init + Offsets::VideoMode_Create);
-		void **videomode = *(void ***)(VideoMode_Create + Offsets::videomode);
-		Renderer::Init(videomode);
-		Stitcher::Init(videomode);
-
 		Interface::Delete(s_EngineAPI);
 	}
 
@@ -938,46 +447,14 @@ bool Engine::Init() {
 	// below anyway
 	auto parseSmoothingInfoAddr = Memory::Scan(this->Name(), "55 8B EC 0F 57 C0 81 EC ? ? ? ? B9 ? ? ? ? 8D 85 ? ? ? ? EB", 178);
 
-	console->DevMsg("CDemoSmootherPanel::ParseSmoothingInfo = %p\n", parseSmoothingInfoAddr);
-
 	if (parseSmoothingInfoAddr) {
 		MH_HOOK_MID(Engine::ParseSmoothingInfo_Mid, parseSmoothingInfoAddr);  // Hook switch-case
 		Engine::ParseSmoothingInfo_Continue = parseSmoothingInfoAddr + 8;     // Back to original function
 		Engine::ParseSmoothingInfo_Default = parseSmoothingInfoAddr + 133;    // Default case
 		Engine::ParseSmoothingInfo_Skip = parseSmoothingInfoAddr - 29;        // Continue loop
 
-		this->demoSmootherPatch = new Memory::Patch();
-		unsigned char nop3[] = {0x90, 0x90, 0x90};
-		this->demoSmootherPatch->Execute(parseSmoothingInfoAddr + 5, nop3);  // Nop rest
 	}
 #endif
-
-#ifdef _WIN32
-	Host_AccumulateTime = (void (*)(float))Memory::Scan(this->Name(), "55 8B EC 51 F3 0F 10 05 ? ? ? ? F3 0F 58 45 08 8B 0D ? ? ? ? F3 0F 11 05 ? ? ? ? 8B 01 8B 50 20 53 B3 01 FF D2", 0);
-	host_frametime = *(float **)((uintptr_t)Host_AccumulateTime + 92);
-#else
-	if (pytal.game->Is(SourceGame_EIPRelPIC)) {
-		Host_AccumulateTime = (void (*)(float))Memory::Scan(this->Name(), "83 EC 1C 8B 15 ? ? ? ? F3 0F 10 05 ? ? ? ? F3 0F 58 44 24 20 F3 0F 11 05 ? ? ? ? 8B 02 8B 40 24 3D ? ? ? ? 0F 85 41 03 00 00", 0);
-		host_frametime = *(float **)((uintptr_t)Host_AccumulateTime + 81);
-	} else {
-		Host_AccumulateTime = (void (*)(float))Memory::Scan(this->Name(), "55 89 E5 83 EC 28 F3 0F 10 05 ? ? ? ? A1 ? ? ? ? F3 0F 58 45 08 F3 0F 11 05 ? ? ? ? 8B 10 89 04 24 FF 52 24", 0);
-		host_frametime = *(float **)((uintptr_t)Host_AccumulateTime + 70);
-	}
-#endif
-
-	Host_AccumulateTime_Hook.SetFunc(Host_AccumulateTime);
-
-#ifdef _WIN32
-	_Host_RunFrame_Render = (void (*)())Memory::Scan(this->Name(), "A1 ? ? ? ? 85 C0 75 1B 8B 0D ? ? ? ? 8B 01 8B 50 40 68 ? ? ? ? FF D2 A3 ? ? ? ? 85 C0 74 0D 6A 02 6A F6 50 E8 ? ? ? ? 83 C4 0C", 0);
-#else
-	if (pytal.game->Is(SourceGame_EIPRelPIC)) {
-		_Host_RunFrame_Render = (void (*)())Memory::Scan(this->Name(), "55 89 E5 57 56 53 83 EC 1C 8B 1D ? ? ? ? 85 DB 0F 85 69 02 00 00 E8 64 FF FF FF A1 ? ? ? ? 80 3D C5 ? ? ? ? 8B 78 30 74 12 83 EC 08 6A 00", 0);
-	} else {
-		_Host_RunFrame_Render = (void (*)())Memory::Scan(this->Name(), "55 89 E5 57 56 53 83 EC 2C 8B 35 ? ? ? ? 85 F6 0F 95 C0 89 C6 0F 85 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 80 3D ? ? ? ? 00 8B 78 30", 0);
-	}
-#endif
-
-	_Host_RunFrame_Render_Hook.SetFunc(_Host_RunFrame_Render);
 
 	// This is the address of the one interesting call to ReadCustomData - the E8 byte indicates the start of the call instruction
 #ifdef _WIN32
@@ -1002,9 +479,6 @@ bool Engine::Init() {
 	Engine::ReadCustomData = reinterpret_cast<_ReadCustomData>(*(uint32_t *)this->readCustomDataInjectAddr + (this->readCustomDataInjectAddr + 4));
 	*(uint32_t *)this->readCustomDataInjectAddr = (uint32_t)&ReadCustomData_Hook - (this->readCustomDataInjectAddr + 4);  // Add 4 to get address of next instruction
 
-	Engine::ReadConsoleCommand = (_ReadConsoleCommand)Memory::Read(this->readConsoleCommandInjectAddr);
-	*(uint32_t *)this->readConsoleCommandInjectAddr = (uint32_t)&ReadConsoleCommand_Hook - (this->readConsoleCommandInjectAddr + 4);
-
 	if (auto debugoverlay = Interface::Create(this->Name(), "VDebugOverlay004", false)) {
 		ScreenPosition = debugoverlay->Original<_ScreenPosition>(Offsets::ScreenPosition);
 		Interface::Delete(debugoverlay);
@@ -1015,16 +489,14 @@ bool Engine::Init() {
 	Command::Hook("exit", Engine::exit_callback_hook, Engine::exit_callback);
 	Command::Hook("quit", Engine::quit_callback_hook, Engine::quit_callback);
 	Command::Hook("help", Engine::help_callback_hook, Engine::help_callback);
-	Command::Hook("load", Engine::load_callback_hook, Engine::load_callback);
+	//Command::Hook("load", Engine::load_callback_hook, Engine::load_callback);
 	Command::Hook("give", Engine::give_callback_hook, Engine::give_callback);
 	Command::Hook("exec", Engine::exec_callback_hook, Engine::exec_callback);
-	Command::HookCompletion("playdemo", AUTOCOMPLETION_FUNCTION(playdemo), playdemo_orig_completion);
 	Command::HookCompletion("exec", AUTOCOMPLETION_FUNCTION(exec), exec_orig_completion);
 
 	Command::Hook("gameui_activate", Engine::gameui_activate_callback_hook, Engine::gameui_activate_callback);
 	Command::Hook("playvideo_end_level_transition", Engine::playvideo_end_level_transition_callback_hook, Engine::playvideo_end_level_transition_callback);
 	Command::Hook("stop_transition_videos_fadeout", Engine::stop_transition_videos_fadeout_callback_hook, Engine::stop_transition_videos_fadeout_callback);
-	CVAR_HOOK_AND_CALLBACK(ss_force_primary_fullscreen);
 
 	host_framerate = Variable("host_framerate");
 	net_showmsg = Variable("net_showmsg");
@@ -1046,31 +518,12 @@ bool Engine::Init() {
 		this->DestroyDebugMesh = this->g_physCollision->Original<_DestroyDebugMesh>(Offsets::DestroyDebugMesh);
 	}
 
-#ifdef _WIN32
-	auto bink_mod = Memory::GetModuleHandleByName(MODULE("binkw32"));
-#else
-	auto bink_mod = Memory::GetModuleHandleByName(MODULE("valve_avi"));
-#endif
-	if (bink_mod) {
-		BinkNextFrame = Memory::GetSymbolAddress<void (__stdcall *)(void *bink)>(bink_mod, STDCALL_NAME("BinkNextFrame", 4));
-		BinkNextFrame_Hook.SetFunc(BinkNextFrame);
-		BinkShouldSkip = Memory::GetSymbolAddress<int (__stdcall *)(void *bink)>(bink_mod, STDCALL_NAME("BinkShouldSkip", 4));
-		BinkShouldSkip_Hook.SetFunc(BinkShouldSkip);
-		BinkWait = Memory::GetSymbolAddress<int (__stdcall *)(void *bink)>(bink_mod, STDCALL_NAME("BinkWait", 4));
-		BinkWait_Hook.SetFunc(BinkWait);
-		Memory::CloseModuleHandle(bink_mod);
-	}
-
-	return this->hasLoaded = this->engineClient && this->s_ServerPlugin && this->demoplayer && this->demorecorder && this->engineTrace;
+	return this->hasLoaded = this->engineClient && this->s_ServerPlugin && this->engineTrace;
 }
 void Engine::Shutdown() {
 	if (this->engineClient) {
 		auto GetSteamAPIContext = this->engineClient->Original<uintptr_t (*)()>(Offsets::GetSteamAPIContext);
-		auto OnGameOverlayActivated = reinterpret_cast<_OnGameOverlayActivated *>(GetSteamAPIContext() + Offsets::OnGameOverlayActivated);
-		*OnGameOverlayActivated = Engine::OnGameOverlayActivatedBase;
 	}
-
-	Renderer::Cleanup();
 
 	Interface::Delete(this->engineClient);
 	Interface::Delete(this->s_ServerPlugin);
@@ -1094,10 +547,6 @@ void Engine::Shutdown() {
 #ifdef _WIN32
 	MH_UNHOOK(Engine::ParseSmoothingInfo_Mid);
 
-	if (this->demoSmootherPatch) {
-		this->demoSmootherPatch->Restore();
-	}
-	SAFE_DELETE(this->demoSmootherPatch)
 #endif
 	Command::Unhook("plugin_load", Engine::plugin_load_callback);
 	Command::Unhook("plugin_unload", Engine::plugin_unload_callback);
@@ -1106,22 +555,10 @@ void Engine::Shutdown() {
 	Command::Unhook("help", Engine::help_callback);
 	Command::Unhook("load", Engine::load_callback);
 	Command::Unhook("give", Engine::give_callback);
-	Command::Unhook("exec", Engine::exec_callback);
-	Command::UnhookCompletion("playdemo", playdemo_orig_completion);
 	Command::UnhookCompletion("exec", exec_orig_completion);
 	Command::Unhook("gameui_activate", Engine::gameui_activate_callback);
 	Command::Unhook("playvideo_end_level_transition", Engine::playvideo_end_level_transition_callback);
 	Command::Unhook("stop_transition_videos_fadeout", Engine::stop_transition_videos_fadeout_callback);
-
-	if (this->demoplayer) {
-		this->demoplayer->Shutdown();
-	}
-	if (this->demorecorder) {
-		this->demorecorder->Shutdown();
-	}
-
-	SAFE_DELETE(this->demoplayer)
-	SAFE_DELETE(this->demorecorder)
 }
 
 Engine *engine;

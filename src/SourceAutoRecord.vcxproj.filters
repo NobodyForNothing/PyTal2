@@ -693,7 +693,7 @@
     <ClInclude Include="Plugin.hpp">
       <Filter>SourceAutoRecord</Filter>
     </ClInclude>
-    <ClInclude Include="PYTAL.hpp">
+    <ClInclude Include="PytalMain.hpp">
       <Filter>SourceAutoRecord</Filter>
     </ClInclude>
     <ClInclude Include="Utils.hpp">

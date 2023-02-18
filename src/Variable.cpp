@@ -3,7 +3,7 @@
 #include "Game.hpp"
 #include "Modules/Tier1.hpp"
 #include "Offsets.hpp"
-#include "PYTAL.hpp"
+#include "PytalMain.hpp"
 
 #include <cstring>
 

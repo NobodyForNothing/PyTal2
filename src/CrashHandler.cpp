@@ -1,6 +1,6 @@
 #include "CrashHandler.hpp"
 
-#include "PYTAL.hpp"
+#include "PytalMain.hpp"
 #include "Version.hpp"
 
 #include <stdint.h>

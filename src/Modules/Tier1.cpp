@@ -3,7 +3,7 @@
 #include "Game.hpp"
 #include "Interface.hpp"
 #include "Offsets.hpp"
-#include "PYTAL.hpp"
+#include "PytalMain.hpp"
 #include "Utils.hpp"
 #include "Event.hpp"
 

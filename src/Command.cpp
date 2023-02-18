@@ -2,7 +2,7 @@
 
 #include "Game.hpp"
 #include "Modules/Tier1.hpp"
-#include "PYTAL.hpp"
+#include "PytalMain.hpp"
 
 #include <cstring>
 #include <set>

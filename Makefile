@@ -7,8 +7,6 @@ ODIR=obj
 
 SRCS=$(wildcard $(SDIR)/*.cpp)
 SRCS+=$(wildcard $(SDIR)/Features/*.cpp)
-SRCS+=$(wildcard $(SDIR)/Features/Demo/*.cpp)
-SRCS+=$(wildcard $(SDIR)/Features/Hud/*.cpp)
 SRCS+=$(wildcard $(SDIR)/Features/Routing/*.cpp)
 SRCS+=$(wildcard $(SDIR)/Features/Speedrun/*.cpp)
 SRCS+=$(wildcard $(SDIR)/Features/Speedrun/Rules/*.cpp)
@@ -32,7 +30,7 @@ DEPS=$(OBJS:%.o=%.d)
 
 WARNINGS=-Wall -Wno-parentheses -Wno-unknown-pragmas -Wno-delete-non-virtual-dtor
 CXXFLAGS=-std=c++17 -m32 $(WARNINGS) -I$(SDIR) -fPIC -D_GNU_SOURCE -Ilib/ffmpeg/include -Ilib/SFML/include -Ilib/curl/include -DSFML_STATIC -DCURL_STATICLIB -I/usr/include/python3.8
-LDFLAGS=-m32 -shared -lstdc++fs -Llib/ffmpeg/lib/linux -lavformat -lavcodec -lavutil -lswscale -lswresample -lx264 -lx265 -lvorbis -lvorbisenc -lvorbisfile -logg -lopus -lvpx -Llib/SFML/lib/linux -lsfml -Llib/curl/lib/linux -lcurl -lssl -lcrypto -lnghttp2 -Llib/python3.9 -lpython3.9
+LDFLAGS=-m32 -shared -lstdc++fs -Llib/ffmpeg/lib/linux -lavformat -lavcodec -lavutil -lswscale -lswresample -lx264 -lx265 -lvorbis -lvorbisenc -lvorbisfile -logg -lopus -lvpx -Llib/SFML/lib/linux -lsfml -Llib/curl/lib/linux -lcurl -lssl -lcrypto -lnghttp2 # -Llib/python3.9 -lpython3.9
 
 # Import config.mk, which can be used for optional config
 -include config.mk

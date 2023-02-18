@@ -1,0 +1,121 @@
+#include "Session.hpp"
+
+#include "Event.hpp"
+#include "Modules/Client.hpp"
+#include "Modules/Console.hpp"
+#include "Modules/Engine.hpp"
+#include "Modules/Server.hpp"
+#include "Utils/SDK.hpp"
+
+#include <chrono>
+#include <thread>
+
+Session *session;
+
+Session::Session()
+	: baseTick(0)
+	, lastSession(0)
+	, isRunning(true)
+	, currentFrame(0)
+	, lastFrame(0)
+	, prevState(HS_RUN)
+	, signonState(SIGNONSTATE_FULL) {
+	this->hasLoaded = true;
+}
+int Session::GetTick() {
+	auto result = engine->GetTick() - this->baseTick;
+	return (result >= 0) ? result : 0;
+}
+void Session::Rebase(const int from) {
+	this->baseTick = from;
+}
+void Session::Started(bool menu) {
+	if (this->isRunning) {
+		return;
+	}
+
+	if (menu) {
+		this->Rebase(engine->GetTick());
+
+		if (!engine->IsOrange()) {
+			this->ResetLoads();
+		}
+
+		this->isRunning = true;
+	} else {
+		this->Start();
+	}
+}
+void Session::Start() {
+	if (this->isRunning) {
+		return;
+	}
+
+	auto tick = engine->GetTick();
+
+	this->Rebase(tick);
+
+	Event::Trigger<Event::SESSION_START>({ engine->isLevelTransition, engine->tickLoadStarted == -2 });
+	engine->isLevelTransition = false;
+	if (engine->tickLoadStarted == -2) engine->tickLoadStarted = -1;
+
+	engine->hasRecorded = false;
+	engine->hasPaused = false;
+	engine->isPausing = false;
+	engine->startedTransitionFadeout = false;
+	engine->forcedPrimaryFullscreen = false;
+	server->tickCount = 0;
+
+	this->currentFrame = 0;
+	this->isRunning = true;
+}
+void Session::Ended() {
+	if (!this->isRunning) {
+		return;
+	}
+
+	this->previousMap = engine->GetCurrentMapName();
+
+	auto tick = this->GetTick();
+
+	engine->isLevelTransition |= engine->IsOrange();
+	if (engine->tickLoadStarted != -1) engine->tickLoadStarted = -2;
+	Event::Trigger<Event::SESSION_END>({ engine->isLevelTransition, engine->tickLoadStarted == -2 });
+
+	if (tick != 0) {
+		console->Print("Session: %i (%.3f)\n", tick, engine->ToTime(tick));
+		this->lastSession = tick;
+	}
+
+	engine->demorecorder->currentDemo = "";
+	this->lastFrame = this->currentFrame;
+	this->currentFrame = 0;
+}
+
+void Session::Changed() {
+	console->DevMsg("m_currentState = %i\n", engine->hoststate->m_currentState);
+
+	if (engine->hoststate->m_currentState == HS_CHANGE_LEVEL_SP || engine->hoststate->m_currentState == HS_CHANGE_LEVEL_MP || engine->hoststate->m_currentState == HS_GAME_SHUTDOWN) {
+		this->Ended();
+	} else if (engine->hoststate->m_currentState == HS_RUN && !engine->hoststate->m_activeGame && engine->GetMaxClients() <= 1) {
+		this->Started(true);
+	}
+}
+void Session::Changed(int state) {
+	console->DevMsg("state = %i\n", state);
+	this->signonState = state;
+
+	// Demo recorder starts syncing from this tick
+	if (state == SIGNONSTATE_FULL) {
+		this->Started();
+		this->loadEnd = NOW();
+
+		auto time = std::chrono::duration_cast<std::chrono::milliseconds>(this->loadEnd - this->loadStart).count();
+		console->DevMsg("Load took: %dms\n", time);
+
+	} else if (state == SIGNONSTATE_PRESPAWN) {
+		this->ResetLoads();
+	} else {
+		this->Ended();
+	}
+}

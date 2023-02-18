@@ -5,7 +5,7 @@
 #include "Interface.hpp"
 #include "Module.hpp"
 #include "Offsets.hpp"
-#include "PYTAL.hpp"
+#include "PytalMain.hpp"
 #include "Utils.hpp"
 
 REDECL(InputSystem::SleepUntilInput);
@@ -57,10 +57,6 @@ void InputSystem::DPIScaleDeltas(int &x, int &y) {
 
 // CInputSystem::SleepUntilInput
 DETOUR(InputSystem::SleepUntilInput, int nMaxSleepTimeMS) {
-	if (pytal_disable_no_focus_sleep.GetBool()) {
-		nMaxSleepTimeMS = 0;
-	}
-
 	return InputSystem::SleepUntilInput(thisptr, nMaxSleepTimeMS);
 }
 

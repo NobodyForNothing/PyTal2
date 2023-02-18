@@ -5,9 +5,8 @@
 #include "Modules/Server.hpp"
 #include "Modules/Engine.hpp"
 #include "Features/Session.hpp"
-#include "Features/Camera.hpp"
 #include "Offsets.hpp"
-#include "PYTAL.hpp"
+#include "PytalMain.hpp"
 
 #include <algorithm>
 #include <cstring>
