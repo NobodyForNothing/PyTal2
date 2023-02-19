@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <ctime>
+#include <Python.h>
 
 #ifdef _WIN32
 #	include <filesystem>
@@ -15,6 +16,7 @@
 #include "Event.hpp"
 #include "Features/EntityList.hpp"
 #include "Features/OffsetFinder.hpp"
+#include "Features/Python/PythonInterpreter.hpp"
 #include "Game.hpp"
 #include "Hook.hpp"
 #include "Interface.hpp"
@@ -62,6 +64,8 @@ bool PytalMain::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameS
 			this->modules->InitAll();
 
 			if (engine && engine->hasLoaded) {
+				// load depends on engine module
+				this->features->AddFeature<PythonInterpreter>(&pythonInterpreter);
 
 				this->cheats->Init();
 
@@ -137,6 +141,7 @@ CON_COMMAND(pytal_about, "pytal_about - prints info about Pytal plugin\n") {
 	console->Print("More information at: " PLUGIN_WEB "\n");
 	console->Print("Game: %s\n", pytal.game->Version());
 	console->Print("Version: " PYTAL_VERSION "\n");
+	console->Print("Python Version: " Py_Version "\n")
 	console->Print("Built: " PLUGIN_BUILT "\n");
 }
 

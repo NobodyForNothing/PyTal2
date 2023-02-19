@@ -1,20 +1,14 @@
 .PHONY: all clean cvars
 .FORCE:
 
-CXX=g++-9
+CXX=g++-10
 SDIR=src
 ODIR=obj
 
 SRCS=$(wildcard $(SDIR)/*.cpp)
 SRCS+=$(wildcard $(SDIR)/Features/*.cpp)
-SRCS+=$(wildcard $(SDIR)/Features/Routing/*.cpp)
-SRCS+=$(wildcard $(SDIR)/Features/Speedrun/*.cpp)
-SRCS+=$(wildcard $(SDIR)/Features/Speedrun/Rules/*.cpp)
-SRCS+=$(wildcard $(SDIR)/Features/Stats/*.cpp)
-SRCS+=$(wildcard $(SDIR)/Features/ReplaySystem/*.cpp)
-SRCS+=$(wildcard $(SDIR)/Features/Tas/*.cpp)
-SRCS+=$(wildcard $(SDIR)/Features/Tas/TasTools/*.cpp)
-SRCS+=$(wildcard $(SDIR)/Features/Timer/*.cpp)
+SRCS+=$(wildcard $(SDIR)/Features/Python/*.cpp)
+SRCS+=$(wildcard $(SDIR)/Features/Python/types/*.cpp)
 SRCS+=$(wildcard $(SDIR)/Games/*.cpp)
 SRCS+=$(wildcard $(SDIR)/Modules/*.cpp)
 SRCS+=$(wildcard $(SDIR)/Utils/*.cpp)
@@ -29,8 +23,8 @@ VERSION=$(shell git describe --tags)
 DEPS=$(OBJS:%.o=%.d)
 
 WARNINGS=-Wall -Wno-parentheses -Wno-unknown-pragmas -Wno-delete-non-virtual-dtor
-CXXFLAGS=-std=c++17 -m32 $(WARNINGS) -I$(SDIR) -fPIC -D_GNU_SOURCE -Ilib/ffmpeg/include -Ilib/SFML/include -Ilib/curl/include -DSFML_STATIC -DCURL_STATICLIB -I/usr/include/python3.8
-LDFLAGS=-m32 -shared -lstdc++fs -Llib/ffmpeg/lib/linux -lavformat -lavcodec -lavutil -lswscale -lswresample -lx264 -lx265 -lvorbis -lvorbisenc -lvorbisfile -logg -lopus -lvpx -Llib/SFML/lib/linux -lsfml -Llib/curl/lib/linux -lcurl -lssl -lcrypto -lnghttp2 # -Llib/python3.9 -lpython3.9
+CXXFLAGS=-std=c++17 -m32 $(WARNINGS) -I$(SDIR) -fPIC -D_GNU_SOURCE -Ilib/ffmpeg/include -Ilib/SFML/include -Ilib/curl/include -DSFML_STATIC -DCURL_STATICLIB -Ilib/python3.9
+LDFLAGS=-m32 -shared -lstdc++fs -Llib/ffmpeg/lib/linux -lavformat -lavcodec -lavutil -lswscale -lswresample -lx264 -lx265 -lvorbis -lvorbisenc -lvorbisfile -logg -lopus -lvpx -Llib/SFML/lib/linux -lsfml -Llib/curl/lib/linux -lcurl -lssl -lcrypto -lnghttp2
 
 # Import config.mk, which can be used for optional config
 -include config.mk
