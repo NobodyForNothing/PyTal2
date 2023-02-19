@@ -140,6 +140,11 @@ CON_COMMAND(pytal_about, "pytal_about - prints info about Pytal plugin\n") {
 	console->Print("Built: " PLUGIN_BUILT "\n");
 }
 
+CON_COMMAND(pytal_exit, "pytal_exit - unloads pytal plugin (TODO)") {
+	console->Print("ERROR: pytal_exit is not implemented; crashing game");
+	engine->ExecuteCommand("sv_cheats 1; crash", true);
+}
+
 #pragma region Unused callbacks
 void PytalMain::Unload() {
 }
