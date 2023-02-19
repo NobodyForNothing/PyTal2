@@ -26,8 +26,8 @@ Plugin::Plugin()
 	, index(0) {
 }
 
-PytalMain pytalMain;
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR(PytalMain, IServerPluginCallbacks, INTERFACEVERSION_ISERVERPLUGINCALLBACKS, pytalMain);
+PytalMain pytal;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR(PytalMain, IServerPluginCallbacks, INTERFACEVERSION_ISERVERPLUGINCALLBACKS, pytal);
 
 
 
@@ -81,19 +81,19 @@ bool PytalMain::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameS
 
 	console->Warning(PLUGIN_NAME ": Failed to load the plugin!\n");
 
-	if (pytalMain.cheats) {
-		pytalMain.cheats->Shutdown();
+	if (pytal.cheats) {
+		pytal.cheats->Shutdown();
 	}
 
-	if (pytalMain.modules) {
-		pytalMain.modules->ShutdownAll();
+	if (pytal.modules) {
+		pytal.modules->ShutdownAll();
 	}
 
 	Variable::ClearAllCallbacks();
-	SAFE_DELETE(pytalMain.cheats)
-	SAFE_DELETE(pytalMain.modules)
-	SAFE_DELETE(pytalMain.plugin)
-	SAFE_DELETE(pytalMain.game)
+	SAFE_DELETE(pytal.cheats)
+	SAFE_DELETE(pytal.modules)
+	SAFE_DELETE(pytal.plugin)
+	SAFE_DELETE(pytal.game)
 	SAFE_DELETE(tier1)
 	SAFE_DELETE(console)
 	CrashHandler::Cleanup();
@@ -135,7 +135,7 @@ void PytalMain::SearchPlugin() {
 CON_COMMAND(pytal_about, "pytal_about - prints info about Pytal plugin\n") {
 	console->Print(PLUGIN_DESC "\n");
 	console->Print("More information at: " PLUGIN_WEB "\n");
-	console->Print("Game: %s\n", pytalMain.game->Version());
+	console->Print("Game: %s\n", pytal.game->Version());
 	console->Print("Version: " PYTAL_VERSION "\n");
 	console->Print("Built: " PLUGIN_BUILT "\n");
 }
@@ -145,24 +145,24 @@ CON_COMMAND(pytal_exit, "pytal_exit - removes all function hooks, registered com
 
 	Hook::DisableAll();
 
-	if (pytalMain.cheats) {
-		pytalMain.cheats->Shutdown();
+	if (pytal.cheats) {
+		pytal.cheats->Shutdown();
 	}
 
-	if (pytalMain.GetPlugin()) {
+	if (pytal.GetPlugin()) {
 		// Plugin has to unhook CEngine some ticks before unloading the module
-		auto unload = std::string("plugin_unload ") + std::to_string(pytalMain.plugin->index);
+		auto unload = std::string("plugin_unload ") + std::to_string(pytal.plugin->index);
 		engine->SendToCommandBuffer(unload.c_str(), SAFE_UNLOAD_TICK_DELAY);
 	}
 
-	if (pytalMain.modules) {
-		pytalMain.modules->ShutdownAll();
+	if (pytal.modules) {
+		pytal.modules->ShutdownAll();
 	}
 
-	SAFE_DELETE(pytalMain.cheats)
-	SAFE_DELETE(pytalMain.modules)
-	SAFE_DELETE(pytalMain.plugin)
-	SAFE_DELETE(pytalMain.game)
+	SAFE_DELETE(pytal.cheats)
+	SAFE_DELETE(pytal.modules)
+	SAFE_DELETE(pytal.plugin)
+	SAFE_DELETE(pytal.game)
 
 	console->Print(PLUGIN_NAME ": Disabling...\n");
 

@@ -36,12 +36,6 @@ bool VGui::Init() {
 		this->IsGameUIVisible = this->enginevgui->Original<_IsGameUIVisible>(Offsets::IsGameUIVisible);
 
 		this->enginevgui->Hook(VGui::Paint_Hook, VGui::Paint, Offsets::Paint);
-
-		for (auto &hud : Hud::GetList()) {
-			if (hud->version == SourceGame_Unknown || pytal.game->Is(hud->version)) {
-				this->huds.push_back(hud);
-			}
-		}
 	}
 
 	return this->hasLoaded = this->enginevgui;

@@ -13,31 +13,7 @@ struct ConFilterRule {
 	std::string end;
 };
 
-static Variable pytal_con_filter("pytal_con_filter", "0", "Enable the console filter\n");
-static Variable pytal_con_filter_default("pytal_con_filter_default", "0", "Whether to allow text through the console filter by default\n");
-static Variable pytal_con_filter_suppress_blank_lines("pytal_con_filter_suppress_blank_lines", "0", "Whether to suppress blank lines in console\n");
 static std::vector<ConFilterRule> g_con_filter_rules;
-
-CON_COMMAND(pytal_con_filter_allow, "pytal_con_filter_allow <string> [end] - add an allow rule to the console filter, allowing until 'end' is matched\n") {
-	if (args.ArgC() != 2 && args.ArgC() != 3) {
-		return console->Print(pytal_con_filter_allow.ThisPtr()->m_pszHelpString);
-	}
-	g_con_filter_rules.push_back({true, args[1], args.ArgC() == 3 ? args[2] : ""});
-}
-
-CON_COMMAND(pytal_con_filter_block, "pytal_con_filter_block <string> [end] - add a disallow rule to the console filter, blocking until 'end' is matched\n") {
-	if (args.ArgC() != 2 && args.ArgC() != 3) {
-		return console->Print(pytal_con_filter_block.ThisPtr()->m_pszHelpString);
-	}
-	g_con_filter_rules.push_back({false, args[1], args.ArgC() == 3 ? args[2] : ""});
-}
-
-CON_COMMAND(pytal_con_filter_reset, "pytal_con_filter_reset - clear the console filter rule list\n") {
-	if (args.ArgC() != 1) {
-		return console->Print(pytal_con_filter_reset.ThisPtr()->m_pszHelpString);
-	}
-	g_con_filter_rules.clear();
-}
 
 struct BufferedPart {
 	enum class Type {
@@ -99,7 +75,7 @@ public:
 		}
 
 		if (MatchesFilters(str.c_str())) {
-			if (!IsNewline(str.c_str()) || !this->last_was_newline || !pytal_con_filter_suppress_blank_lines.GetBool()) {
+			if (!IsNewline(str.c_str()) || !this->last_was_newline || !false) {
 				for (auto &b : this->buf) {
 					switch (b.type) {
 					case BufferedPart::Type::COL_PRINT:
@@ -127,7 +103,7 @@ private:
 	}
 
 	bool MatchesFilters(const char *msg) {
-		if (!pytal_con_filter.isRegistered || !pytal_con_filter.GetBool()) return true;
+		if (true) return true;
 
 		if (this->do_until_end) {
 			bool match = *this->do_until_end;
@@ -148,7 +124,7 @@ private:
 			}
 		}
 
-		return pytal_con_filter_default.GetBool();
+		return false;
 	}
 
 	bool MatchesPattern(const char *str, const std::string &pat) {

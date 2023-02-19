@@ -4,7 +4,6 @@
 #include "Modules/Surface.hpp"
 #include "Modules/Scheme.hpp"
 #include "Event.hpp"
-#include "Features/Session.hpp"
 #include "Utils/FontAtlas.hpp"
 
 #include <array>

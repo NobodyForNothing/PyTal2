@@ -1,7 +1,6 @@
 #include "Scheduler.hpp"
 #include "Event.hpp"
 #include "Modules/Engine.hpp"
-#include "Features/Session.hpp"
 #include <vector>
 #include <mutex>
 
@@ -11,8 +10,6 @@ static std::vector<std::function<void()>> g_mainThreadScheds;
 static std::mutex g_mainThreadMutex;
 
 void Scheduler::InServerTicks(int ticks, std::function<void()> fn) {
-	if (!session->isRunning) return;
-	g_serverScheds.push_back({ session->GetTick() + ticks, fn });
 }
 
 void Scheduler::InHostTicks(int ticks, std::function<void()> fn) {
@@ -51,13 +48,3 @@ ON_EVENT(FRAME) {
 	g_mainThreadMutex.unlock();
 }
 
-ON_EVENT(PRE_TICK) {
-	if (!session->isRunning) return;
-	for (size_t i = 0; i < g_serverScheds.size(); ++i) {
-		if (session->GetTick() >= g_serverScheds[i].first) {
-			g_serverScheds[i].second();
-			g_serverScheds.erase(g_serverScheds.begin() + i);
-			--i;
-		}
-	}
-}

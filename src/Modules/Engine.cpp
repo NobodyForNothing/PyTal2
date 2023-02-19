@@ -7,10 +7,10 @@
 #include "Game.hpp"
 #include "Hook.hpp"
 #include "Interface.hpp"
-#include "PytalMain.hpp"
 #include "Server.hpp"
 #include "Utils.hpp"
 #include "Variable.hpp"
+#include "PytalMain.hpp"
 
 #include <cstring>
 #include <cmath>
@@ -374,7 +374,7 @@ bool Engine::Init() {
 
 		if (this->g_VEngineServer = Interface::Create(this->Name(), "VEngineServer022")) {
 			this->g_VEngineServer->Hook(Engine::ChangeLevel_Hook, Engine::ChangeLevel, Offsets::ChangeLevel);
-			this->g_VEngineServer->Hook(Engine::ClientCommandKeyValues_Hook, Engine::ClientCommandKeyValues, Offsets::ClientCommandKeyValues);
+			//this->g_VEngineServer->Hook(Engine::ClientCommandKeyValues_Hook, Engine::ClientCommandKeyValues, Offsets::ClientCommandKeyValues);
 			this->ClientCommand = this->g_VEngineServer->Original<_ClientCommand>(Offsets::ClientCommand);
 			this->IsServerPaused = this->g_VEngineServer->Original<_IsServerPaused>(Offsets::IsServerPaused);
 			this->ServerPause = this->g_VEngineServer->Original<_ServerPause>(Offsets::ServerPause);
@@ -400,10 +400,6 @@ bool Engine::Init() {
 			tickcount = Memory::Deref<int *>(ProcessTick + Offsets::tickcount);
 
 			interval_per_tick = Memory::Deref<float *>(ProcessTick + Offsets::interval_per_tick);
-
-			auto SetSignonState = this->cl->Original(Offsets::Disconnect - 1);
-			auto HostState_OnClientConnected = Memory::Read(SetSignonState + Offsets::HostState_OnClientConnected);
-			Memory::Deref<CHostState *>(HostState_OnClientConnected + Offsets::hoststate, &hoststate);
 		}
 
 		if (this->engineTrace = Interface::Create(this->Name(), "EngineTraceServer004")) {
@@ -477,8 +473,7 @@ bool Engine::Init() {
 
 	// It's a relative call, so we have to do some weird fuckery lol
 	Engine::ReadCustomData = reinterpret_cast<_ReadCustomData>(*(uint32_t *)this->readCustomDataInjectAddr + (this->readCustomDataInjectAddr + 4));
-	*(uint32_t *)this->readCustomDataInjectAddr = (uint32_t)&ReadCustomData_Hook - (this->readCustomDataInjectAddr + 4);  // Add 4 to get address of next instruction
-
+	
 	if (auto debugoverlay = Interface::Create(this->Name(), "VDebugOverlay004", false)) {
 		ScreenPosition = debugoverlay->Original<_ScreenPosition>(Offsets::ScreenPosition);
 		Interface::Delete(debugoverlay);
@@ -490,13 +485,11 @@ bool Engine::Init() {
 	Command::Hook("quit", Engine::quit_callback_hook, Engine::quit_callback);
 	Command::Hook("help", Engine::help_callback_hook, Engine::help_callback);
 	//Command::Hook("load", Engine::load_callback_hook, Engine::load_callback);
-	Command::Hook("give", Engine::give_callback_hook, Engine::give_callback);
-	Command::Hook("exec", Engine::exec_callback_hook, Engine::exec_callback);
+	//Command::Hook("give", Engine::give_callback_hook, Engine::give_callback);
+	//Command::Hook("exec", Engine::exec_callback_hook, Engine::exec_callback);
 	Command::HookCompletion("exec", AUTOCOMPLETION_FUNCTION(exec), exec_orig_completion);
 
 	Command::Hook("gameui_activate", Engine::gameui_activate_callback_hook, Engine::gameui_activate_callback);
-	Command::Hook("playvideo_end_level_transition", Engine::playvideo_end_level_transition_callback_hook, Engine::playvideo_end_level_transition_callback);
-	Command::Hook("stop_transition_videos_fadeout", Engine::stop_transition_videos_fadeout_callback_hook, Engine::stop_transition_videos_fadeout_callback);
 
 	host_framerate = Variable("host_framerate");
 	net_showmsg = Variable("net_showmsg");

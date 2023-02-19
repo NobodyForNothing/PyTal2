@@ -4,7 +4,6 @@
 #include "Modules/Console.hpp"
 #include "Modules/Server.hpp"
 #include "Modules/Engine.hpp"
-#include "Features/Session.hpp"
 #include "Offsets.hpp"
 #include "PytalMain.hpp"
 
