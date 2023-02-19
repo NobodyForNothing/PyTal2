@@ -29,9 +29,6 @@ Variable r_portaltestents;
 Variable r_portalsopenall;
 Variable r_drawviewmodel;
 
-Variable pytal_disable_coop_score_hud("pytal_disable_coop_score_hud", "0", "Disables the coop score HUD which appears in demo playback.\n");
-Variable pytal_disable_save_status_hud("pytal_disable_save_status_hud", "0", "Disables the saving/saved HUD which appears when you make a save.\n");
-
 REDECL(Client::LevelInitPreEntity);
 REDECL(Client::CreateMove);
 REDECL(Client::CreateMove2);
@@ -258,10 +255,6 @@ DETOUR(Client::ProcessMovement, void *player, CMoveData *move) {
 	return result;
 }
 
-CON_COMMAND(pytal_chat, "pytal_chat - open the chat HUD\n") {
-	client->OpenChat();
-}
-
 extern Hook g_DrawTranslucentRenderablesHook;
 DETOUR(Client::DrawTranslucentRenderables, bool inSkybox, bool shadowDepth) {
 	g_DrawTranslucentRenderablesHook.Disable();
@@ -375,7 +368,6 @@ bool Client::Init() {
 
 		if (this->g_pClientMode = Interface::Create(clientMode)) {
 			this->g_pClientMode->Hook(Client::CreateMove_Hook, Client::CreateMove, Offsets::CreateMove);
-			this->g_pClientMode->Hook(Client::OverrideView_Hook, Client::OverrideView, Offsets::OverrideView);
 		}
 
 		if (this->g_pClientMode2 = Interface::Create(clientMode2)) {

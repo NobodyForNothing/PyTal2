@@ -140,37 +140,6 @@ CON_COMMAND(pytal_about, "pytal_about - prints info about Pytal plugin\n") {
 	console->Print("Built: " PLUGIN_BUILT "\n");
 }
 
-CON_COMMAND(pytal_exit, "pytal_exit - removes all function hooks, registered commands and unloads the module\n") {
-	Variable::ClearAllCallbacks();
-
-	Hook::DisableAll();
-
-	if (pytal.cheats) {
-		pytal.cheats->Shutdown();
-	}
-
-	if (pytal.GetPlugin()) {
-		// Plugin has to unhook CEngine some ticks before unloading the module
-		auto unload = std::string("plugin_unload ") + std::to_string(pytal.plugin->index);
-		engine->SendToCommandBuffer(unload.c_str(), SAFE_UNLOAD_TICK_DELAY);
-	}
-
-	if (pytal.modules) {
-		pytal.modules->ShutdownAll();
-	}
-
-	SAFE_DELETE(pytal.cheats)
-	SAFE_DELETE(pytal.modules)
-	SAFE_DELETE(pytal.plugin)
-	SAFE_DELETE(pytal.game)
-
-	console->Print(PLUGIN_NAME ": Disabling...\n");
-
-	SAFE_DELETE(tier1)
-	SAFE_DELETE(console)
-	CrashHandler::Cleanup();
-}
-
 #pragma region Unused callbacks
 void PytalMain::Unload() {
 }

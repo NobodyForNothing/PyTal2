@@ -29,14 +29,13 @@ void InputSystem::SetCursorPos(int x, int y) {
 	return this->SetCursorPosition(this->g_InputSystem->ThisPtr(), x, y);
 }
 
-Variable pytal_dpi_scale("pytal_dpi_scale", "1", 1, "Fraction to scale mouse DPI down by.\n");
 void InputSystem::DPIScaleDeltas(int &x, int &y) {
 	static int saved_x = 0;
 	static int saved_y = 0;
 
 	static int last_dpi_scale = 1;
 
-	int scale = pytal_dpi_scale.GetInt();
+	int scale = 1;
 	if (scale < 1) scale = 1;
 
 	if (scale != last_dpi_scale) {
