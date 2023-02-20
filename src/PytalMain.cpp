@@ -141,7 +141,8 @@ CON_COMMAND(pytal_about, "pytal_about - prints info about Pytal plugin\n") {
 	console->Print("More information at: " PLUGIN_WEB "\n");
 	console->Print("Game: %s\n", pytal.game->Version());
 	console->Print("Version: " PYTAL_VERSION "\n");
-	console->Print("Python Version: " Py_Version "\n")
+	std::string pythonVersion = "Python Version: " + std::to_string(Py_Version) + "\n";
+	console->Print(pythonVersion.c_str());
 	console->Print("Built: " PLUGIN_BUILT "\n");
 }
 
