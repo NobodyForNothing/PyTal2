@@ -1,6 +1,5 @@
 #include "PythonEntity.hpp"
 
-#define PY_SSIZE_T_CLEAN
 #include "Features/EntityList.hpp"
 #include "Modules/Client.hpp"
 #include "Modules/Engine.hpp"
@@ -25,7 +24,7 @@ int Custom_init(Entity *self, PyObject *args, PyObject *kwds) {
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "i", kwlist, serial))
 		return -1;
-
+	return 1; // ?
 }
 
 // methods
@@ -78,10 +77,13 @@ PyObject *Entity_kill(Entity *self, PyObject *Py_UNUSED(ignored)) {
 	return Py_None;
 }
 PyObject *Entity_has_key(Entity *self, PyObject *args) {
+	return Py_None;
 }
 PyObject *Entity_get_val(Entity *self, PyObject *args) {
+	return Py_None;
 }
 PyObject *Entity_set_keyval(Entity *self, PyObject *args) {
+	return Py_None;
 }
 PyObject *Entity_fire_input(Entity *self, PyObject *args) {
 	void *entity = self->entity;
@@ -94,7 +96,8 @@ PyObject *Entity_fire_input(Entity *self, PyObject *args) {
 	val.fieldType = FIELD_VOID;
 	void *player = server->GetPlayer(1);
 	server->AcceptInput(entity, "Kill", player, player, val, 0);
-
+	return Py_None;
 }
 PyObject *Entity_on_output(Entity *self, PyObject *args) {
+	return Py_None;
 }

@@ -370,7 +370,7 @@ bool Engine::Init() {
 		this->m_bWaitEnabled = reinterpret_cast<bool *>((uintptr_t)s_CommandBuffer + Offsets::m_bWaitEnabled);
 		this->m_bWaitEnabled2 = reinterpret_cast<bool *>((uintptr_t)this->m_bWaitEnabled + Offsets::CCommandBufferSize);
 
-		auto GetSteamAPIContext = this->engineClient->Original<uintptr_t (*)()>(Offsets::GetSteamAPIContext);
+		//auto GetSteamAPIContext = this->engineClient->Original<uintptr_t (*)()>(Offsets::GetSteamAPIContext);
 
 		if (this->g_VEngineServer = Interface::Create(this->Name(), "VEngineServer022")) {
 			this->g_VEngineServer->Hook(Engine::ChangeLevel_Hook, Engine::ChangeLevel, Offsets::ChangeLevel);
@@ -421,9 +421,9 @@ bool Engine::Init() {
 	}
 
 	if (auto s_EngineAPI = Interface::Create(this->Name(), "VENGINE_LAUNCHER_API_VERSION004", false)) {
-		auto IsRunningSimulation = s_EngineAPI->Original(Offsets::IsRunningSimulation);
-		void *engAddr;
-		engAddr = Memory::DerefDeref<void *>(IsRunningSimulation + Offsets::eng);
+		// auto IsRunningSimulation = s_EngineAPI->Original(Offsets::IsRunningSimulation);
+		// void *engAddr;
+		// engAddr = Memory::DerefDeref<void *>(IsRunningSimulation + Offsets::eng);
 
 		Interface::Delete(s_EngineAPI);
 	}
@@ -514,9 +514,9 @@ bool Engine::Init() {
 	return this->hasLoaded = this->engineClient && this->s_ServerPlugin && this->engineTrace;
 }
 void Engine::Shutdown() {
-	if (this->engineClient) {
-		auto GetSteamAPIContext = this->engineClient->Original<uintptr_t (*)()>(Offsets::GetSteamAPIContext);
-	}
+	// if (this->engineClient) {
+	// 	auto GetSteamAPIContext = this->engineClient->Original<uintptr_t (*)()>(Offsets::GetSteamAPIContext);
+	// }
 
 	Interface::Delete(this->engineClient);
 	Interface::Delete(this->s_ServerPlugin);

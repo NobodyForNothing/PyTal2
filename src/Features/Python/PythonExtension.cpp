@@ -10,6 +10,15 @@
 
 #include "Features/Python/types/PythonEntity.hpp"
 
+static PyObject* game_print(PyObject *self, PyObject *args);
+static PyObject* game_execute_console(PyObject *self, PyObject *args);
+static PyObject* game_entities(PyObject *self, PyObject *Py_UNUSED(args));
+static PyObject* game_entity_exists(PyObject *self, PyObject *args); // checks if handle valid
+static PyObject* game_get_entity_name_by_handle(PyObject *self, PyObject *args);
+static PyObject* game_get_entity_classname_by_handle(PyObject *self, PyObject *args);
+static PyObject* game_create_entity_by_classname(PyObject *self, PyObject *args);
+static PyObject* game_get_player(PyObject *self, PyObject *Py_UNUSED(args));
+
 // game module - gives access to methods available across games
 static PyMethodDef GameMethods[] = {
 	{"print", game_print, METH_VARARGS, "Print text to the game console."},
@@ -46,7 +55,7 @@ PyObject* PyInit_game(void) {
 	return gameModule;
 }
 
-static PyObject* game_get_player(PyObject *self, PyObject *args) {
+static PyObject* game_get_player(PyObject *self, PyObject *Py_UNUSED(args)) {
 	for (auto index = 1; index <= Offsets::NUM_ENT_ENTRIES; ++index) {
 		auto info = entityList->GetEntityInfoByIndex(index);
 		if (info->m_pEntity == nullptr) {
@@ -57,6 +66,7 @@ static PyObject* game_get_player(PyObject *self, PyObject *args) {
 		p->entity = info->m_pEntity;
 		return (PyObject *) p;
 	}
+	return Py_None;
 }
 
 // game functions
@@ -82,7 +92,7 @@ static PyObject* game_execute_console(PyObject *self, PyObject *args) {
 }
 
 // return list with handles (pointers) of all entities in the game
-static PyObject* game_entities(PyObject *self, PyObject *args) {
+static PyObject* game_entities(PyObject *self, PyObject *Py_UNUSED(args)) {
 	std::uintptr_t pointers[Offsets::NUM_ENT_ENTRIES];
 	int numEntities = 0;
 
