@@ -35,6 +35,7 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR(PytalMain, IServerPluginCallbacks, INTERFACEVE
 
 PytalMain::PytalMain()
 	: modules(new Modules())
+	, features(new Features())
 	, cheats(new Cheats())
 	, plugin(new Plugin())
 	, game(Game::CreateNew()) {
@@ -64,10 +65,10 @@ bool PytalMain::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameS
 			this->modules->InitAll();
 
 			if (engine && engine->hasLoaded) {
-				// load depends on engine module
-				//this->features->AddFeature<PythonInterpreter>(&pythonInterpreter);
-
 				this->cheats->Init();
+
+				// load depends on engine module
+				this->features->AddFeature<PythonInterpreter>(&pythonInterpreter);
 
 				this->SearchPlugin();
 

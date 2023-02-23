@@ -15,6 +15,11 @@
 PythonInterpreter *pythonInterpreter;
 
 PythonInterpreter::PythonInterpreter() {
+	// initialize provided modules
+	PyImport_AppendInittab("game", &PyInit_game);
+
+	// initialize the python instance
+	Py_Initialize();
 
 	// create files if needed
 	std::filesystem::create_directory(GetPythonScriptsDirectory());
@@ -34,14 +39,9 @@ PythonInterpreter::PythonInterpreter() {
 			MapsspawnFile.close();
 	}
 
-	// initialize provided modules
-	PyImport_AppendInittab("game", &PyInit_game);
-
-	// initialize the python instance
-	Py_Initialize();
-
 	// Execute load file
 	PythonInterpreter::ExecuteFile(GetPythonPluginLoadFile().c_str());
+	
 }
 
 // runs the python Interpreter on a file, specified in an absolute location
