@@ -30,8 +30,7 @@ LDFLAGS=-m32 -shared -lstdc++fs -Llib/ffmpeg/lib/linux -lavformat -lavcodec -lav
 # Import config.mk, which can be used for optional config
 -include config.mk
 
-install: all
-	cp pytal.so /home/derdilla/.steam/steam/steamapps/common/Portal\ 2/pytal.so
+
 all: pytal.so
 clean:
 	rm -rf $(ODIR) pytal.so src/Version.hpp
